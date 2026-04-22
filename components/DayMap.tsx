@@ -328,6 +328,41 @@ function ActivitySheet({
         <div className="mb-3 bg-[#fafaf8] rounded p-2 border border-[#e5e7eb]">
           <p className="text-[10px] font-semibold text-[#6b7280] mb-1.5">Alternatives</p>
           <div className="space-y-1">
+            {(() => {
+              const originalSel = !selectedAltId || selectedAltId === activity.id
+              return (
+                <button
+                  key="__original__"
+                  onClick={() => onSelectAlt(activity.id, activity.id)}
+                  className="w-full text-left flex items-start gap-1.5 p-1.5 rounded transition-colors"
+                  style={{
+                    backgroundColor: originalSel ? '#ffffff' : 'transparent',
+                    border: originalSel ? '1px solid #B8860B' : '1px solid transparent',
+                  }}
+                >
+                  <span
+                    className="flex-shrink-0 mt-[2px] w-[10px] h-[10px] rounded-full border"
+                    style={{
+                      borderColor: '#B8860B',
+                      backgroundColor: originalSel ? '#B8860B' : '#ffffff',
+                    }}
+                  />
+                  <span className="flex-1 min-w-0">
+                    <span className="block text-[11px] font-medium text-[#1a1a1a]">
+                      {activity.title}
+                      <span className="ml-1 text-[10px] font-normal text-[#9ca3af]">
+                        (original)
+                      </span>
+                    </span>
+                    {activity.address && (
+                      <span className="block text-[10px] text-[#9ca3af] mt-[1px]">
+                        📍 {activity.address}
+                      </span>
+                    )}
+                  </span>
+                </button>
+              )
+            })()}
             {activity.alternatives.map((alt) => {
               const isSel = selectedAltId === alt.id
               return (

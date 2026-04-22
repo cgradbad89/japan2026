@@ -1,5 +1,6 @@
 import {
   collection,
+  deleteDoc,
   doc,
   getDocs,
   onSnapshot,
@@ -7,7 +8,6 @@ import {
   serverTimestamp,
   setDoc,
   writeBatch,
-  deleteField,
 } from 'firebase/firestore'
 import { db } from './firebase'
 import type { Activity, Accommodation, MealAlternative } from '@/data/itinerary'
@@ -71,11 +71,8 @@ export async function setMealSelection(
 }
 
 export async function clearMealSelection(activityId: string): Promise<void> {
-  await setDoc(
-    doc(db, 'mealSelections', activityId),
-    { selectedAltId: deleteField() },
-    { merge: true }
-  )
+  const ref = doc(db, 'mealSelections', activityId)
+  await deleteDoc(ref)
 }
 
 // ---------- Day overrides ----------

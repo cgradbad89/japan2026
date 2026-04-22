@@ -34,12 +34,9 @@ export default function LegView({ leg }: { leg: Leg }) {
 
   const mergedDays: Day[] = leg.days.map((d) => {
     const o = dayOverrides[d.id]
-    if (!o) return d
-    return {
-      ...d,
-      activities: o.activities ?? d.activities,
-      ideas: o.ideas ?? d.ideas,
-    }
+    const activities = o?.activities ?? d.activities
+    const ideas = o?.ideas ?? d.ideas ?? []
+    return { ...d, activities, ideas }
   })
 
   const activeDay =
@@ -127,8 +124,9 @@ export default function LegView({ leg }: { leg: Leg }) {
 
       <button
         onClick={() => setEditMode(!editMode)}
-        className="fixed bottom-5 right-5 z-50 shadow-lg rounded-full font-semibold transition-colors"
+        className="fixed bottom-5 right-5 shadow-lg rounded-full font-semibold transition-colors"
         style={{
+          zIndex: 9999,
           backgroundColor: editMode ? '#16a34a' : '#C0392B',
           color: '#ffffff',
           minWidth: editMode ? 92 : 52,
