@@ -122,6 +122,15 @@ export default function DayMap({
 }) {
   const [sheet, setSheet] = useState<Sheet>(null)
 
+  // All located activities for the polyline (includes accommodations, excludes free)
+  const allRoutePoints = day.activities.filter(
+    (a) =>
+      a.lat !== undefined &&
+      a.lng !== undefined &&
+      a.type !== 'free'
+  )
+
+  // Only non-accommodation activities get numbered pins
   const routeActivities = day.activities.filter(
     (a) =>
       a.lat !== undefined &&
@@ -156,9 +165,8 @@ export default function DayMap({
   })
 
   if (
-    routeActivities.length === 0 &&
+    allRoutePoints.length === 0 &&
     altEntries.length === 0 &&
-    accommodationActivities.length === 0 &&
     dayAccommodations.length === 0
   ) {
     return (
@@ -171,12 +179,26 @@ export default function DayMap({
     )
   }
 
-  const routePositions: [number, number][] = routeActivities.map((a) => [a.lat!, a.lng!])
+  // Build polyline: activity points in order, then prepend/append leg accommodations
+  const basePositions: [number, number][] = allRoutePoints.map((a) => [a.lat!, a.lng!])
+  const prependCoords: [number, number][] = []
+  const appendCoords: [number, number][] = []
+  for (const acc of dayAccommodations) {
+    const coords = STAY_COORDS[acc.id]
+    const checkInDate = new Date(`${acc.checkIn} 2026`)
+    const checkOutDate = new Date(`${acc.checkOut} 2026`)
+    if (checkInDate.toDateString() === dayDate.toDateString()) {
+      appendCoords.push([coords.lat, coords.lng])
+    } else if (checkOutDate.toDateString() === dayDate.toDateString()) {
+      prependCoords.push([coords.lat, coords.lng])
+    }
+    // mid-stay: not added to route line
+  }
+  const polylinePositions: [number, number][] = [...prependCoords, ...basePositions, ...appendCoords]
+
   const allPositions: [number, number][] = [
-    ...routePositions,
+    ...polylinePositions,
     ...altEntries.map((e) => [e.alt.lat!, e.alt.lng!] as [number, number]),
-    ...accommodationActivities.map((a) => [a.lat!, a.lng!] as [number, number]),
-    ...dayAccommodations.map((acc) => [STAY_COORDS[acc.id].lat, STAY_COORDS[acc.id].lng] as [number, number]),
   ]
   const center = allPositions[0] ?? ([35.6762, 139.6503] as [number, number])
 
@@ -205,9 +227,9 @@ export default function DayMap({
         />
         <FitBounds positions={allPositions} />
 
-        {routePositions.length > 1 && (
+        {polylinePositions.length > 1 && (
           <Polyline
-            positions={routePositions}
+            positions={polylinePositions}
             pathOptions={{ color: '#C0392B', weight: 2, dashArray: '6 4', opacity: 0.7 }}
           />
         )}
