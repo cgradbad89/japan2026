@@ -28,12 +28,12 @@ function parseAccDate(str: string): string {
 }
 
 const STAY_COORDS: Record<string, { lat: number; lng: number }> = {
-  'gw-stay-1': { lat: 35.6284, lng: 139.7387 },
-  'gw-stay-2': { lat: 34.9977, lng: 135.7590 },
-  'gw-stay-3': { lat: 35.5793, lng: 139.7348 },
-  'hk-stay-1': { lat: 43.0686, lng: 141.3508 },
-  'hk-stay-2': { lat: 42.4808, lng: 141.0183 },
-  'hk-stay-3': { lat: 43.0602, lng: 141.3527 },
+  'gw-stay-1': { lat: 35.6284, lng: 139.7387 }, // Shinagawa Hotel
+  'gw-stay-2': { lat: 34.9977, lng: 135.759 }, // Kyoto Rental
+  'gw-stay-3': { lat: 35.5793, lng: 139.7348 }, // Omori Rental
+  'hk-stay-1': { lat: 43.0686, lng: 141.3508 }, // Royal Park Canvas Sapporo
+  'hk-stay-2': { lat: 42.9984, lng: 141.1243 }, // Jozankei Yurakusoan
+  'hk-stay-3': { lat: 43.0686, lng: 141.3508 }, // Royal Park Canvas Sapporo (return)
 }
 
 const typePinColor: Record<ActivityType, string> = {
@@ -61,15 +61,6 @@ const typeLabel: Record<ActivityType, string> = {
   accommodation: 'Stay',
   entertainment: 'Entertainment',
   free: 'Free',
-}
-
-export const STAY_COORDS: Record<string, { lat: number; lng: number }> = {
-  'gw-stay-1': { lat: 35.6284, lng: 139.7387 }, // Shinagawa Hotel
-  'gw-stay-2': { lat: 34.9977, lng: 135.759 }, // Kyoto Rental
-  'gw-stay-3': { lat: 35.5793, lng: 139.7348 }, // Omori Rental
-  'hk-stay-1': { lat: 43.0686, lng: 141.3508 }, // Royal Park Canvas Sapporo
-  'hk-stay-2': { lat: 42.9984, lng: 141.1243 }, // Jozankei Yurakusoan
-  'hk-stay-3': { lat: 43.0686, lng: 141.3508 }, // Royal Park Canvas Sapporo (return)
 }
 
 function makeNumberedIcon(num: number, color: string, checked: boolean) {
