@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import localFont from 'next/font/local'
 import './globals.css'
 
@@ -14,8 +14,14 @@ const geistMono = localFont({
 })
 
 export const metadata: Metadata = {
-  title: 'Japan 2026',
-  description: 'Japan 2026 — Golden Week & Hokkaido family trip',
+  title: 'Japan 2026 · Family Trip',
+  description: 'Golden Week + Hokkaido · May 2026',
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: '#C0392B',
 }
 
 export default function RootLayout({

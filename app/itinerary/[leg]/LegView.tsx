@@ -14,17 +14,17 @@ export default function LegView({ leg }: { leg: Leg }) {
   const [tab, setTab] = useState<Tab>('itinerary')
   const [activeDayId, setActiveDayId] = useState(leg.days[0]?.id)
   const [editMode, setEditMode] = useState(false)
-  const [dayOverrides, setDayOverrides] = useState<Record<string, Activity[]>>({})
+  const [dayOverrides, setDayOverrides] = useState<
+    Record<string, { activities: Activity[] | null; ideas: string[] | null }>
+  >({})
 
   useEffect(() => {
     const unsubs = leg.days.map((d) =>
-      subscribeToDay(d.id, (activities) => {
-        setDayOverrides((prev) => {
-          const next = { ...prev }
-          if (activities) next[d.id] = activities
-          else delete next[d.id]
-          return next
-        })
+      subscribeToDay(d.id, (data) => {
+        setDayOverrides((prev) => ({
+          ...prev,
+          [d.id]: { activities: data.activities, ideas: data.ideas },
+        }))
       })
     )
     return () => {
@@ -33,8 +33,13 @@ export default function LegView({ leg }: { leg: Leg }) {
   }, [leg.days])
 
   const mergedDays: Day[] = leg.days.map((d) => {
-    const override = dayOverrides[d.id]
-    return override ? { ...d, activities: override } : d
+    const o = dayOverrides[d.id]
+    if (!o) return d
+    return {
+      ...d,
+      activities: o.activities ?? d.activities,
+      ideas: o.ideas ?? d.ideas,
+    }
   })
 
   const activeDay =
@@ -82,8 +87,8 @@ export default function LegView({ leg }: { leg: Leg }) {
       <main className="max-w-4xl mx-auto pb-24">
         {tab === 'itinerary' && (
           <>
-            <div className="bg-white border-b border-[#e5e7eb] overflow-x-auto">
-              <div className="flex gap-2 px-4 py-3 min-w-max">
+            <div className="bg-white border-b border-[#e5e7eb] overflow-x-auto no-scrollbar">
+              <div className="flex gap-2 py-3 min-w-max" style={{ paddingLeft: 16, paddingRight: 16 }}>
                 {mergedDays.map((d) => {
                   const isActive = d.id === activeDay?.id
                   const [, mm, dd] = d.date.split('-')
@@ -92,10 +97,12 @@ export default function LegView({ leg }: { leg: Leg }) {
                     <button
                       key={d.id}
                       onClick={() => setActiveDayId(d.id)}
-                      className="flex-shrink-0 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-colors"
+                      className="flex-shrink-0 px-4 rounded-full text-[12px] font-semibold transition-colors"
                       style={{
                         backgroundColor: isActive ? '#C0392B' : '#f3f4f6',
                         color: isActive ? '#ffffff' : '#6b7280',
+                        minHeight: 36,
+                        minWidth: 52,
                       }}
                     >
                       {label}
@@ -124,8 +131,10 @@ export default function LegView({ leg }: { leg: Leg }) {
         style={{
           backgroundColor: editMode ? '#16a34a' : '#C0392B',
           color: '#ffffff',
-          padding: editMode ? '10px 18px' : '12px 14px',
-          fontSize: editMode ? '13px' : '16px',
+          minWidth: editMode ? 92 : 52,
+          minHeight: 52,
+          padding: editMode ? '10px 20px' : '10px 16px',
+          fontSize: editMode ? '13px' : '18px',
         }}
         aria-label={editMode ? 'Exit edit mode' : 'Enter edit mode'}
       >

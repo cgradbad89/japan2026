@@ -221,13 +221,22 @@ const sheetStyle: React.CSSProperties = {
   left: 0,
   right: 0,
   zIndex: 1000,
-  maxHeight: '65%',
+  maxHeight: '70vh',
   overflowY: 'auto',
   background: 'white',
   borderRadius: '16px 16px 0 0',
   borderTop: '0.5px solid #e5e7eb',
   padding: 14,
+  paddingBottom: 'calc(14px + env(safe-area-inset-bottom))',
   boxShadow: '0 -4px 16px rgba(0,0,0,0.08)',
+}
+
+const handleStyle: React.CSSProperties = {
+  width: 36,
+  height: 4,
+  background: '#e5e7eb',
+  borderRadius: 2,
+  touchAction: 'pan-y',
 }
 
 function ActivitySheet({
@@ -252,11 +261,12 @@ function ActivitySheet({
   return (
     <div style={sheetStyle}>
       <div className="flex justify-center mb-2">
-        <div style={{ width: 28, height: 3, background: '#e5e7eb', borderRadius: 2 }} />
+        <div style={handleStyle} />
       </div>
       <button
         onClick={onClose}
-        className="absolute top-3 right-3 w-6 h-6 rounded-full flex items-center justify-center text-[#6b7280] hover:bg-[#f3f4f6]"
+        className="absolute top-1 right-1 rounded-full flex items-center justify-center text-[#6b7280] hover:bg-[#f3f4f6]"
+        style={{ width: 44, height: 44, fontSize: 22 }}
         aria-label="close"
       >
         ×
@@ -378,11 +388,12 @@ function AltSheet({
   return (
     <div style={sheetStyle}>
       <div className="flex justify-center mb-2">
-        <div style={{ width: 28, height: 3, background: '#e5e7eb', borderRadius: 2 }} />
+        <div style={handleStyle} />
       </div>
       <button
         onClick={onClose}
-        className="absolute top-3 right-3 w-6 h-6 rounded-full flex items-center justify-center text-[#6b7280] hover:bg-[#f3f4f6]"
+        className="absolute top-1 right-1 rounded-full flex items-center justify-center text-[#6b7280] hover:bg-[#f3f4f6]"
+        style={{ width: 44, height: 44, fontSize: 22 }}
         aria-label="close"
       >
         ×

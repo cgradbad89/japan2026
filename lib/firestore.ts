@@ -1,9 +1,12 @@
 import {
   collection,
   doc,
+  getDocs,
   onSnapshot,
+  query,
   serverTimestamp,
   setDoc,
+  writeBatch,
   deleteField,
 } from 'firebase/firestore'
 import { db } from './firebase'
@@ -92,18 +95,23 @@ function stripUndefined<T>(value: T): T {
   return value
 }
 
+export type DayOverride = {
+  activities: Activity[] | null
+  ideas: string[] | null
+}
+
 export function subscribeToDay(
   dayId: string,
-  callback: (activities: Activity[] | null) => void
+  callback: (data: DayOverride) => void
 ): () => void {
   return onSnapshot(doc(db, 'dayOverrides', dayId), (snap) => {
-    if (!snap.exists()) return callback(null)
-    const data = snap.data()
-    if (data && Array.isArray(data.activities)) {
-      callback(data.activities as Activity[])
-    } else {
-      callback(null)
-    }
+    if (!snap.exists()) return callback({ activities: null, ideas: null })
+    const data = snap.data() || {}
+    const activities = Array.isArray(data.activities)
+      ? (data.activities as Activity[])
+      : null
+    const ideas = Array.isArray(data.ideas) ? (data.ideas as string[]) : null
+    callback({ activities, ideas })
   })
 }
 
@@ -111,8 +119,21 @@ export async function saveDayActivities(
   dayId: string,
   activities: Activity[]
 ): Promise<void> {
+  await setDoc(
+    doc(db, 'dayOverrides', dayId),
+    { activities: stripUndefined(activities) },
+    { merge: true }
+  )
+}
+
+export async function saveIdeas(
+  dayId: string,
+  ideas: string[],
+  activities: Activity[]
+): Promise<void> {
   await setDoc(doc(db, 'dayOverrides', dayId), {
     activities: stripUndefined(activities),
+    ideas: stripUndefined(ideas),
   })
 }
 
@@ -156,4 +177,63 @@ export async function addAlternative(
     return { ...a, alternatives: [...existing, alt] }
   })
   await saveDayActivities(dayId, updated)
+}
+
+// ---------- Pre-trip checklist ----------
+
+export type ChecklistItem = {
+  id: string
+  label: string
+  done: boolean
+  order: number
+}
+
+export function subscribeToChecklist(
+  callback: (items: ChecklistItem[]) => void
+): () => void {
+  return onSnapshot(collection(db, 'checklist'), (snap) => {
+    const items: ChecklistItem[] = []
+    snap.forEach((d) => {
+      const v = d.data()
+      items.push({
+        id: d.id,
+        label: String(v?.label ?? ''),
+        done: !!v?.done,
+        order: typeof v?.order === 'number' ? v.order : 999,
+      })
+    })
+    items.sort((a, b) => a.order - b.order)
+    callback(items)
+  })
+}
+
+export async function toggleChecklistItem(
+  itemId: string,
+  currentValue: boolean
+): Promise<void> {
+  await setDoc(
+    doc(db, 'checklist', itemId),
+    {
+      done: !currentValue,
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true }
+  )
+}
+
+export async function seedChecklistIfEmpty(
+  items: { id: string; label: string; order: number }[]
+): Promise<boolean> {
+  const snap = await getDocs(query(collection(db, 'checklist')))
+  if (!snap.empty) return false
+  const batch = writeBatch(db)
+  for (const item of items) {
+    batch.set(doc(db, 'checklist', item.id), {
+      label: item.label,
+      order: item.order,
+      done: false,
+    })
+  }
+  await batch.commit()
+  return true
 }

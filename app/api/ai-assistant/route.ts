@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { NextRequest, NextResponse } from 'next/server'
-import { getLeg, type Day } from '@/data/itinerary'
+import { getLeg, type Activity, type Day } from '@/data/itinerary'
 
 export const runtime = 'nodejs'
 
@@ -16,8 +16,12 @@ function findDay(dayId: string): Day | null {
   return null
 }
 
-function buildSystemPrompt(day: Day): string {
-  const activityLines = day.activities
+function buildSystemPrompt(
+  day: Day,
+  activities: Activity[],
+  ideas: string[]
+): string {
+  const activityLines = activities
     .map((a) => {
       let line = `- ${a.time || ''} ${a.title} (${a.type})`
       if (a.address) line += ` — ${a.address}`
@@ -30,8 +34,8 @@ function buildSystemPrompt(day: Day): string {
     })
     .join('\n')
 
-  const ideasLine = day.ideas?.length
-    ? `\nOptional ideas for this day: ${day.ideas.join(', ')}`
+  const ideasLine = ideas.length
+    ? `\nOptional ideas for this day: ${ideas.join(', ')}`
     : ''
 
   const legDescription =
@@ -55,6 +59,12 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const dayId: string | undefined = body?.dayId
     const messages: Msg[] = Array.isArray(body?.messages) ? body.messages : []
+    const currentActivities: Activity[] | undefined = Array.isArray(body?.currentActivities)
+      ? body.currentActivities
+      : undefined
+    const currentIdeas: string[] | undefined = Array.isArray(body?.currentIdeas)
+      ? body.currentIdeas
+      : undefined
 
     if (!dayId) {
       return NextResponse.json({ error: 'Missing dayId' }, { status: 400 })
@@ -82,10 +92,13 @@ export async function POST(req: NextRequest) {
       .filter((m) => m && typeof m.content === 'string' && m.content.trim().length > 0)
       .map((m) => ({ role: m.role, content: m.content }))
 
+    const effectiveActivities = currentActivities ?? day.activities
+    const effectiveIdeas = currentIdeas ?? day.ideas ?? []
+
     const response = await client.messages.create({
       model: 'claude-opus-4-5',
       max_tokens: 1024,
-      system: buildSystemPrompt(day),
+      system: buildSystemPrompt(day, effectiveActivities, effectiveIdeas),
       messages: conversation,
     })
 

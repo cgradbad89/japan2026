@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import type { Day } from '@/data/itinerary'
+import type { Activity, Day } from '@/data/itinerary'
 
 type Msg = { role: 'user' | 'assistant'; content: string }
 
@@ -9,11 +9,14 @@ export default function AIDrawer({
   day,
   isOpen,
   onClose,
+  activities,
+  ideas,
 }: {
   day: Day
   isOpen: boolean
   onClose: () => void
-  // props unused inside but part of spec API for future use
+  activities?: Activity[]
+  ideas?: string[]
   mealSelections?: Record<string, string>
   checkoffs?: Record<string, boolean>
 }) {
@@ -72,7 +75,12 @@ export default function AIDrawer({
       const res = await fetch('/api/ai-assistant', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ dayId: day.id, messages: sendable }),
+        body: JSON.stringify({
+          dayId: day.id,
+          messages: sendable,
+          currentActivities: activities ?? day.activities,
+          currentIdeas: ideas ?? day.ideas ?? [],
+        }),
       })
       const data = await res.json()
       if (!res.ok || data.error) {
@@ -152,7 +160,8 @@ export default function AIDrawer({
           </div>
           <button
             onClick={onClose}
-            className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[#6b7280] hover:bg-[#f3f4f6] text-lg"
+            className="flex-shrink-0 rounded-full flex items-center justify-center text-[#6b7280] hover:bg-[#f3f4f6]"
+            style={{ width: 44, height: 44, fontSize: 22 }}
             aria-label="close"
           >
             ×
@@ -222,7 +231,13 @@ export default function AIDrawer({
           )}
         </div>
 
-        <div className="border-t border-[#e5e7eb] p-3 flex items-center gap-2 flex-shrink-0 bg-white">
+        <div
+          className="border-t border-[#e5e7eb] flex items-center gap-2 flex-shrink-0 bg-white"
+          style={{
+            padding: '12px',
+            paddingBottom: 'calc(12px + env(safe-area-inset-bottom))',
+          }}
+        >
           <input
             ref={inputRef}
             type="text"
@@ -235,14 +250,15 @@ export default function AIDrawer({
               }
             }}
             placeholder={`Ask about Day ${day.dayNumber}...`}
-            className="flex-1 text-[12px] px-3 py-2 rounded-full border border-[#e5e7eb] focus:outline-none focus:border-[#C0392B]"
+            className="flex-1 px-4 rounded-full border border-[#e5e7eb] focus:outline-none focus:border-[#C0392B]"
+            style={{ fontSize: 16, minHeight: 44 }}
             disabled={loading}
           />
           <button
             onClick={send}
             disabled={loading || !input.trim()}
-            className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-white font-bold disabled:opacity-40 transition-opacity"
-            style={{ backgroundColor: '#C0392B' }}
+            className="flex-shrink-0 rounded-full flex items-center justify-center text-white font-bold disabled:opacity-40 transition-opacity"
+            style={{ backgroundColor: '#C0392B', width: 44, height: 44, fontSize: 18 }}
             aria-label="send"
           >
             ↑

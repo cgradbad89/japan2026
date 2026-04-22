@@ -11,6 +11,7 @@ import type {
 import {
   addAlternative,
   saveDayActivities,
+  saveIdeas,
   setMealSelection,
   subscribeToCheckoffs,
   subscribeToMealSelections,
@@ -283,13 +284,21 @@ function ActivityCard({
 
   return (
     <div
-      className="flex-1 rounded-lg p-2 bg-white"
+      className="flex-1 rounded-lg bg-white"
+      onClick={(e) => {
+        if (editMode) return
+        const t = e.target as HTMLElement
+        if (t.closest('button, input, textarea, a')) return
+        onToggleCheck()
+      }}
       style={{
+        padding: '10px',
         borderLeft: `2px solid ${color}`,
         border: '0.5px solid #e5e7eb',
         borderLeftWidth: '2px',
         borderLeftColor: color,
         backgroundColor: activity.isTBD ? '#fffaf0' : '#ffffff',
+        cursor: editMode ? 'default' : 'pointer',
       }}
     >
       <div className="flex items-start justify-between gap-2">
@@ -322,13 +331,28 @@ function ActivityCard({
         ) : (
           <button
             onClick={onToggleCheck}
-            className="flex-shrink-0 w-[15px] h-[15px] rounded-full border flex items-center justify-center"
+            className="flex-shrink-0 rounded-full flex items-center justify-center"
             style={{
-              borderColor: checked ? '#16a34a' : '#d1d5db',
-              backgroundColor: checked ? '#16a34a' : 'transparent',
+              width: 28,
+              height: 28,
+              marginTop: -6,
+              marginRight: -6,
+              border: 'none',
+              background: 'transparent',
             }}
             aria-label="mark done"
           >
+            <span
+              className="flex items-center justify-center rounded-full"
+              style={{
+                width: 18,
+                height: 18,
+                borderWidth: 1,
+                borderStyle: 'solid',
+                borderColor: checked ? '#16a34a' : '#d1d5db',
+                backgroundColor: checked ? '#16a34a' : 'transparent',
+              }}
+            >
             {checked && (
               <svg
                 viewBox="0 0 12 12"
@@ -343,6 +367,7 @@ function ActivityCard({
                 <path d="M2 6l2.5 2.5L10 3" />
               </svg>
             )}
+            </span>
           </button>
         )}
       </div>
@@ -513,6 +538,140 @@ function ActivityCard({
   )
 }
 
+function IdeasSection({
+  ideas,
+  editMode,
+  onAdd,
+  onRemove,
+}: {
+  ideas: string[]
+  editMode: boolean
+  onAdd: (text: string) => Promise<void>
+  onRemove: (index: number) => Promise<void>
+}) {
+  const [adding, setAdding] = useState(false)
+  const [draft, setDraft] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  if (!editMode && ideas.length === 0) return null
+
+  return (
+    <div className="mt-2 pt-3 border-t border-[#e5e7eb]">
+      <h3
+        className="text-[11px] font-medium text-[#6b7280] uppercase"
+        style={{ letterSpacing: '0.08em' }}
+      >
+        💡 Ideas for this day
+      </h3>
+      <p className="text-[9px] text-[#9ca3af] italic mt-[2px] mb-2">
+        Not in the plan — optional additions
+      </p>
+
+      <div className="space-y-1.5">
+        {ideas.map((idea, i) => (
+          <div
+            key={`${idea}-${i}`}
+            className="rounded-lg flex items-start gap-2"
+            style={{
+              background: '#fafaf8',
+              border: '0.5px solid #e5e7eb',
+              borderLeft: '2px solid #d1d5db',
+              padding: '8px 10px',
+            }}
+          >
+            <span className="text-[12px] leading-none mt-[1px]">💡</span>
+            <span className="flex-1 text-[10px] italic text-[#6b7280] leading-snug">
+              {idea}
+            </span>
+            {editMode && (
+              <button
+                onClick={() => onRemove(i)}
+                className="flex-shrink-0 text-[11px] text-[#9ca3af] hover:text-[#C0392B] leading-none"
+                aria-label="remove idea"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {editMode && (
+        <div className="mt-2">
+          {adding ? (
+            <div
+              className="border-2 border-dashed rounded-lg p-2 bg-white"
+              style={{ borderColor: '#6b7280' }}
+            >
+              <input
+                type="text"
+                value={draft}
+                autoFocus
+                placeholder="Add an idea…"
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    ;(async () => {
+                      if (!draft.trim() || saving) return
+                      setSaving(true)
+                      try {
+                        await onAdd(draft)
+                        setDraft('')
+                        setAdding(false)
+                      } finally {
+                        setSaving(false)
+                      }
+                    })()
+                  }
+                }}
+                className="w-full text-[12px] border border-[#e5e7eb] rounded px-2 py-1.5 focus:outline-none focus:border-[#6b7280]"
+                style={{ fontSize: 16 }}
+              />
+              <div className="flex gap-2 pt-2">
+                <button
+                  disabled={saving || !draft.trim()}
+                  onClick={async () => {
+                    setSaving(true)
+                    try {
+                      await onAdd(draft)
+                      setDraft('')
+                      setAdding(false)
+                    } finally {
+                      setSaving(false)
+                    }
+                  }}
+                  className="flex-1 text-[11px] font-semibold text-white rounded px-2 py-2 disabled:opacity-50"
+                  style={{ background: '#6b7280' }}
+                >
+                  {saving ? 'Saving…' : 'Save'}
+                </button>
+                <button
+                  onClick={() => {
+                    setAdding(false)
+                    setDraft('')
+                  }}
+                  className="flex-1 text-[11px] font-medium text-[#6b7280] bg-white border border-[#e5e7eb] rounded px-2 py-2"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => setAdding(true)}
+              className="w-full border-2 border-dashed text-[#6b7280] rounded-lg py-3 text-[11px] font-semibold hover:bg-[#fafaf8] transition-colors"
+              style={{ borderColor: '#6b7280' }}
+            >
+              + Add idea
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function DayTimeline({
   day,
   editMode,
@@ -591,6 +750,19 @@ export default function DayTimeline({
 
   const handleAddAlt = async (activityId: string, alt: MealAlternative) => {
     await addAlternative(day.id, activityId, alt, day.activities)
+  }
+
+  const handleAddIdea = async (text: string) => {
+    const trimmed = text.trim()
+    if (!trimmed) return
+    const nextIdeas = [...(day.ideas ?? []), trimmed]
+    await saveIdeas(day.id, nextIdeas, day.activities)
+  }
+
+  const handleRemoveIdea = async (index: number) => {
+    if (typeof window !== 'undefined' && !window.confirm('Remove this idea?')) return
+    const nextIdeas = (day.ideas ?? []).filter((_, i) => i !== index)
+    await saveIdeas(day.id, nextIdeas, day.activities)
   }
 
   const handleAskClaude = () => {
@@ -755,22 +927,12 @@ export default function DayTimeline({
         </div>
       )}
 
-      {day.ideas && day.ideas.length > 0 && (
-        <div className="mt-4 pt-4 border-t border-[#e5e7eb]">
-          <h3 className="text-xs font-semibold text-[#1a1a1a] mb-2">💡 Ideas for this day</h3>
-          <p className="text-[10px] text-[#9ca3af] mb-2 italic">Optional — not in the plan</p>
-          <div className="space-y-1.5">
-            {day.ideas.map((idea, i) => (
-              <div
-                key={i}
-                className="text-[10px] italic text-[#6b7280] bg-[#fafaf8] border border-[#e5e7eb] rounded px-2 py-1.5"
-              >
-                {idea}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <IdeasSection
+        ideas={day.ideas ?? []}
+        editMode={editMode}
+        onAdd={handleAddIdea}
+        onRemove={handleRemoveIdea}
+      />
       </>
       )}
 
@@ -778,6 +940,8 @@ export default function DayTimeline({
         day={day}
         isOpen={aiOpen}
         onClose={() => setAiOpen(false)}
+        activities={day.activities}
+        ideas={day.ideas ?? []}
         mealSelections={mealSelections}
         checkoffs={checkoffs}
       />
