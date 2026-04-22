@@ -1,5 +1,6 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import { useEffect, useState } from 'react'
 import type {
   Activity,
@@ -15,6 +16,9 @@ import {
   subscribeToMealSelections,
   toggleCheckoff,
 } from '@/lib/firestore'
+
+const DayMap = dynamic(() => import('@/components/DayMap'), { ssr: false })
+const AIDrawer = dynamic(() => import('@/components/AIDrawer'), { ssr: false })
 
 const typeColor: Record<ActivityType, string> = {
   sightseeing: '#C0392B',
@@ -519,6 +523,14 @@ export default function DayTimeline({
   const [checkoffs, setCheckoffs] = useState<Record<string, boolean>>({})
   const [mealSelections, setMealSelections] = useState<Record<string, string>>({})
   const [showAddForm, setShowAddForm] = useState(false)
+  const [tab, setTab] = useState<'timeline' | 'map'>('timeline')
+  const [aiOpen, setAiOpen] = useState(false)
+
+  useEffect(() => {
+    // reset the inner tab & AI drawer when switching days
+    setTab('timeline')
+    setAiOpen(false)
+  }, [day.id])
 
   useEffect(() => {
     const u1 = subscribeToCheckoffs(setCheckoffs)
@@ -582,9 +594,7 @@ export default function DayTimeline({
   }
 
   const handleAskClaude = () => {
-    if (typeof window !== 'undefined') {
-      console.log('Ask Claude — coming soon')
-    }
+    setAiOpen((prev) => !prev)
   }
 
   return (
@@ -620,13 +630,18 @@ export default function DayTimeline({
         </div>
         <button
           onClick={handleAskClaude}
-          className="flex-shrink-0 text-[11px] px-2.5 py-1.5 border border-[#C0392B] text-[#C0392B] rounded-md hover:bg-[#fff8f8] transition-colors font-medium"
+          className="flex-shrink-0 text-[11px] px-2.5 py-1.5 rounded-md transition-colors font-medium"
+          style={{
+            border: '1px solid #C0392B',
+            color: aiOpen ? '#ffffff' : '#C0392B',
+            backgroundColor: aiOpen ? '#C0392B' : 'transparent',
+          }}
         >
-          ✦ Ask Claude
+          {aiOpen ? '✦ Close' : '✦ Ask Claude'}
         </button>
       </div>
 
-      <div className="mb-4">
+      <div className="mb-3">
         <div className="flex items-center justify-between text-[10px] text-[#6b7280] mb-1">
           <span>
             {completedCount} of {totalActs} activities
@@ -641,6 +656,41 @@ export default function DayTimeline({
         </div>
       </div>
 
+      <div className="flex gap-5 border-b border-[#f3f4f6] mb-4">
+        <button
+          onClick={() => setTab('timeline')}
+          className="relative py-2 text-[11px] font-semibold transition-colors"
+          style={{ color: tab === 'timeline' ? '#C0392B' : '#6b7280' }}
+        >
+          Timeline
+          {tab === 'timeline' && (
+            <span className="absolute -bottom-px left-0 right-0 h-[2px] bg-[#C0392B]" />
+          )}
+        </button>
+        <button
+          onClick={() => setTab('map')}
+          className="relative py-2 text-[11px] font-semibold transition-colors"
+          style={{ color: tab === 'map' ? '#C0392B' : '#6b7280' }}
+        >
+          Map
+          {tab === 'map' && (
+            <span className="absolute -bottom-px left-0 right-0 h-[2px] bg-[#C0392B]" />
+          )}
+        </button>
+      </div>
+
+      {tab === 'map' && (
+        <DayMap
+          day={day}
+          checkoffs={checkoffs}
+          mealSelections={mealSelections}
+          onToggleCheckoff={handleToggle}
+          onSelectAlt={handleSelectAlt}
+        />
+      )}
+
+      {tab === 'timeline' && (
+      <>
       <div className="relative">
         {day.activities.map((act, idx) => {
           const color = typeColor[act.type]
@@ -721,6 +771,16 @@ export default function DayTimeline({
           </div>
         </div>
       )}
+      </>
+      )}
+
+      <AIDrawer
+        day={day}
+        isOpen={aiOpen}
+        onClose={() => setAiOpen(false)}
+        mealSelections={mealSelections}
+        checkoffs={checkoffs}
+      />
     </div>
   )
 }
