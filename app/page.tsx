@@ -1,101 +1,105 @@
-import Image from "next/image";
+'use client'
+
+import Link from 'next/link'
+import { useEffect, useState } from 'react'
+import HubBanner from '@/components/HubBanner'
+
+// May 1 2026 00:00 JST = April 30 2026 15:00 UTC
+const TRIP_START_UTC = Date.UTC(2026, 3, 30, 15, 0, 0)
+
+function diff(targetMs: number) {
+  const now = Date.now()
+  const ms = Math.max(0, targetMs - now)
+  const days = Math.floor(ms / 86400000)
+  const hours = Math.floor((ms % 86400000) / 3600000)
+  const minutes = Math.floor((ms % 3600000) / 60000)
+  const seconds = Math.floor((ms % 60000) / 1000)
+  return { days, hours, minutes, seconds }
+}
+
+function CountdownCard({ value, label }: { value: number; label: string }) {
+  return (
+    <div className="bg-white rounded-lg border border-[#e5e7eb] px-3 py-3 flex flex-col items-center">
+      <span className="text-2xl sm:text-3xl font-bold text-[#C0392B] tabular-nums leading-none">
+        {value.toString().padStart(2, '0')}
+      </span>
+      <span className="text-[10px] text-[#6b7280] mt-1.5 uppercase tracking-wider">{label}</span>
+    </div>
+  )
+}
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [time, setTime] = useState(() => diff(TRIP_START_UTC))
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+  useEffect(() => {
+    const id = setInterval(() => setTime(diff(TRIP_START_UTC)), 1000)
+    return () => clearInterval(id)
+  }, [])
+
+  return (
+    <div className="min-h-screen bg-[#fafaf8]">
+      <HubBanner />
+
+      <main className="max-w-4xl mx-auto px-4 py-8 sm:py-12">
+        <section className="mb-8 sm:mb-10 text-center">
+          <h1 className="text-4xl sm:text-6xl font-bold text-[#1a1a1a] tracking-tight">
+            Japan 2026
+          </h1>
+          <p className="text-sm sm:text-base text-[#1a1a1a] mt-3">
+            Golden Week · May 1–10 · 5 Adults
+          </p>
+          <p className="text-sm sm:text-base text-[#6b7280] mt-1">
+            Hokkaido · May 11–15 · John & Sabrina
+          </p>
+        </section>
+
+        <section className="mb-8 sm:mb-10">
+          <div className="grid grid-cols-4 gap-2 sm:gap-3 max-w-lg mx-auto">
+            <CountdownCard value={time.days} label="Days" />
+            <CountdownCard value={time.hours} label="Hours" />
+            <CountdownCard value={time.minutes} label="Minutes" />
+            <CountdownCard value={time.seconds} label="Seconds" />
+          </div>
+        </section>
+
+        <section className="space-y-3 max-w-xl mx-auto">
+          <Link
+            href="/itinerary/golden-week"
+            className="block bg-white rounded-lg p-4 border border-[#e5e7eb] hover:shadow-md transition-shadow group"
+            style={{ borderLeft: '3px solid #C0392B' }}
           >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <h2 className="text-lg font-bold text-[#1a1a1a]">Golden Week</h2>
+                <p className="text-[11px] text-[#6b7280] mt-1">
+                  May 1–10 · Tokyo, Kyoto, Hiroshima, Osaka · 5 Adults
+                </p>
+              </div>
+              <span className="text-[#C0392B] text-xl flex-shrink-0 group-hover:translate-x-1 transition-transform">
+                →
+              </span>
+            </div>
+          </Link>
+
+          <Link
+            href="/itinerary/hokkaido"
+            className="block bg-white rounded-lg p-4 border border-[#e5e7eb] hover:shadow-md transition-shadow group"
+            style={{ borderLeft: '3px solid #C0392B' }}
           >
-            Read our docs
-          </a>
-        </div>
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <h2 className="text-lg font-bold text-[#1a1a1a]">Hokkaido</h2>
+                <p className="text-[11px] text-[#6b7280] mt-1">
+                  May 11–15 · Sapporo & Noboribetsu · John & Sabrina
+                </p>
+              </div>
+              <span className="text-[#C0392B] text-xl flex-shrink-0 group-hover:translate-x-1 transition-transform">
+                →
+              </span>
+            </div>
+          </Link>
+        </section>
       </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
     </div>
-  );
+  )
 }
