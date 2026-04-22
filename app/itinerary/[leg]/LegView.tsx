@@ -1,18 +1,44 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import HubBanner from '@/components/HubBanner'
 import DayTimeline from '@/components/DayTimeline'
 import StaysPage from '@/components/StaysPage'
-import type { Leg } from '@/data/itinerary'
+import type { Activity, Day, Leg } from '@/data/itinerary'
+import { subscribeToDay } from '@/lib/firestore'
 
 type Tab = 'itinerary' | 'stays'
 
 export default function LegView({ leg }: { leg: Leg }) {
   const [tab, setTab] = useState<Tab>('itinerary')
   const [activeDayId, setActiveDayId] = useState(leg.days[0]?.id)
-  const activeDay = leg.days.find((d) => d.id === activeDayId) ?? leg.days[0]
+  const [editMode, setEditMode] = useState(false)
+  const [dayOverrides, setDayOverrides] = useState<Record<string, Activity[]>>({})
+
+  useEffect(() => {
+    const unsubs = leg.days.map((d) =>
+      subscribeToDay(d.id, (activities) => {
+        setDayOverrides((prev) => {
+          const next = { ...prev }
+          if (activities) next[d.id] = activities
+          else delete next[d.id]
+          return next
+        })
+      })
+    )
+    return () => {
+      unsubs.forEach((u) => u())
+    }
+  }, [leg.days])
+
+  const mergedDays: Day[] = leg.days.map((d) => {
+    const override = dayOverrides[d.id]
+    return override ? { ...d, activities: override } : d
+  })
+
+  const activeDay =
+    mergedDays.find((d) => d.id === activeDayId) ?? mergedDays[0]
 
   return (
     <div className="min-h-screen bg-[#fafaf8]">
@@ -20,10 +46,7 @@ export default function LegView({ leg }: { leg: Leg }) {
 
       <header className="bg-white border-b border-[#e5e7eb]">
         <div className="max-w-4xl mx-auto px-4 py-4">
-          <Link
-            href="/"
-            className="text-[11px] text-[#6b7280] hover:text-[#1a1a1a]"
-          >
+          <Link href="/" className="text-[11px] text-[#6b7280] hover:text-[#1a1a1a]">
             ← Home
           </Link>
           <h1 className="text-2xl font-bold text-[#1a1a1a] mt-2">{leg.title}</h1>
@@ -36,9 +59,7 @@ export default function LegView({ leg }: { leg: Leg }) {
           <button
             onClick={() => setTab('itinerary')}
             className="relative py-2.5 text-xs font-medium transition-colors"
-            style={{
-              color: tab === 'itinerary' ? '#C0392B' : '#6b7280',
-            }}
+            style={{ color: tab === 'itinerary' ? '#C0392B' : '#6b7280' }}
           >
             Itinerary
             {tab === 'itinerary' && (
@@ -48,9 +69,7 @@ export default function LegView({ leg }: { leg: Leg }) {
           <button
             onClick={() => setTab('stays')}
             className="relative py-2.5 text-xs font-medium transition-colors"
-            style={{
-              color: tab === 'stays' ? '#C0392B' : '#6b7280',
-            }}
+            style={{ color: tab === 'stays' ? '#C0392B' : '#6b7280' }}
           >
             Stays
             {tab === 'stays' && (
@@ -60,13 +79,15 @@ export default function LegView({ leg }: { leg: Leg }) {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto">
+      <main className="max-w-4xl mx-auto pb-24">
         {tab === 'itinerary' && (
           <>
             <div className="bg-white border-b border-[#e5e7eb] overflow-x-auto">
               <div className="flex gap-2 px-4 py-3 min-w-max">
-                {leg.days.map((d) => {
+                {mergedDays.map((d) => {
                   const isActive = d.id === activeDay?.id
+                  const [, mm, dd] = d.date.split('-')
+                  const label = `${parseInt(mm, 10)}/${parseInt(dd, 10)}`
                   return (
                     <button
                       key={d.id}
@@ -77,21 +98,39 @@ export default function LegView({ leg }: { leg: Leg }) {
                         color: isActive ? '#ffffff' : '#6b7280',
                       }}
                     >
-                      D{d.dayNumber}
+                      {label}
                     </button>
                   )
                 })}
               </div>
             </div>
 
-            {activeDay && <DayTimeline day={activeDay} />}
+            {activeDay && <DayTimeline day={activeDay} editMode={editMode} />}
           </>
         )}
 
         {tab === 'stays' && (
-          <StaysPage accommodations={leg.accommodations} leg={leg.id} />
+          <StaysPage
+            accommodations={leg.accommodations}
+            leg={leg.id}
+            editMode={editMode}
+          />
         )}
       </main>
+
+      <button
+        onClick={() => setEditMode(!editMode)}
+        className="fixed bottom-5 right-5 z-50 shadow-lg rounded-full font-semibold transition-colors"
+        style={{
+          backgroundColor: editMode ? '#16a34a' : '#C0392B',
+          color: '#ffffff',
+          padding: editMode ? '10px 18px' : '12px 14px',
+          fontSize: editMode ? '13px' : '16px',
+        }}
+        aria-label={editMode ? 'Exit edit mode' : 'Enter edit mode'}
+      >
+        {editMode ? 'Done ✓' : '✎'}
+      </button>
     </div>
   )
 }

@@ -1,7 +1,20 @@
 'use client'
 
-import { useState } from 'react'
-import type { Activity, ActivityType, Day, MealAlternative } from '@/data/itinerary'
+import { useEffect, useState } from 'react'
+import type {
+  Activity,
+  ActivityType,
+  Day,
+  MealAlternative,
+} from '@/data/itinerary'
+import {
+  addAlternative,
+  saveDayActivities,
+  setMealSelection,
+  subscribeToCheckoffs,
+  subscribeToMealSelections,
+  toggleCheckoff,
+} from '@/lib/firestore'
 
 const typeColor: Record<ActivityType, string> = {
   sightseeing: '#C0392B',
@@ -21,12 +34,248 @@ const typeEmoji: Record<ActivityType, string> = {
   free: '☕',
 }
 
-function ActivityCard({ activity }: { activity: Activity }) {
-  const [altsOpen, setAltsOpen] = useState(false)
-  const [selectedAlt, setSelectedAlt] = useState<string | null>(null)
-  const [checked, setChecked] = useState(false)
+const ALL_TYPES: ActivityType[] = [
+  'transport',
+  'sightseeing',
+  'meal',
+  'entertainment',
+  'free',
+  'accommodation',
+]
+
+type ActivityFormFields = {
+  time: string
+  title: string
+  type: ActivityType
+  highlight: string
+  note: string
+  address: string
+}
+
+function blankFields(): ActivityFormFields {
+  return {
+    time: '',
+    title: '',
+    type: 'sightseeing',
+    highlight: '',
+    note: '',
+    address: '',
+  }
+}
+
+function fieldsFromActivity(a: Activity): ActivityFormFields {
+  return {
+    time: a.time ?? '',
+    title: a.title ?? '',
+    type: a.type,
+    highlight: a.highlight ?? '',
+    note: a.note ?? '',
+    address: a.address ?? '',
+  }
+}
+
+function applyFields(base: Partial<Activity>, f: ActivityFormFields): Activity {
+  const next: Activity = {
+    id: base.id as string,
+    type: f.type,
+    title: f.title.trim(),
+  }
+  if (f.time.trim()) next.time = f.time.trim()
+  if (f.highlight.trim()) next.highlight = f.highlight.trim()
+  if (f.note.trim()) next.note = f.note.trim()
+  if (f.address.trim()) next.address = f.address.trim()
+  if (base.description) next.description = base.description
+  if (base.lat !== undefined) next.lat = base.lat
+  if (base.lng !== undefined) next.lng = base.lng
+  if (base.alternatives) next.alternatives = base.alternatives
+  if (base.isTBD) next.isTBD = base.isTBD
+  return next
+}
+
+function ActivityEditForm({
+  initial,
+  onSave,
+  onCancel,
+}: {
+  initial: ActivityFormFields
+  onSave: (f: ActivityFormFields) => Promise<void> | void
+  onCancel: () => void
+}) {
+  const [f, setF] = useState<ActivityFormFields>(initial)
+  const [saving, setSaving] = useState(false)
+
+  const inputCls =
+    'w-full text-[11px] border border-[#e5e7eb] rounded px-2 py-1.5 focus:outline-none focus:border-[#C0392B]'
+
+  return (
+    <div className="mt-2 p-2 bg-[#fafaf8] border border-[#e5e7eb] rounded space-y-1.5">
+      <input
+        className={inputCls}
+        placeholder="Time"
+        value={f.time}
+        onChange={(e) => setF({ ...f, time: e.target.value })}
+      />
+      <input
+        className={inputCls}
+        placeholder="Title"
+        value={f.title}
+        onChange={(e) => setF({ ...f, title: e.target.value })}
+      />
+      <select
+        className={inputCls}
+        value={f.type}
+        onChange={(e) => setF({ ...f, type: e.target.value as ActivityType })}
+      >
+        {ALL_TYPES.map((t) => (
+          <option key={t} value={t}>
+            {typeEmoji[t]} {t}
+          </option>
+        ))}
+      </select>
+      <textarea
+        className={inputCls}
+        placeholder="Highlight (optional)"
+        rows={2}
+        value={f.highlight}
+        onChange={(e) => setF({ ...f, highlight: e.target.value })}
+      />
+      <textarea
+        className={inputCls}
+        placeholder="Note (optional)"
+        rows={2}
+        value={f.note}
+        onChange={(e) => setF({ ...f, note: e.target.value })}
+      />
+      <input
+        className={inputCls}
+        placeholder="Address (optional)"
+        value={f.address}
+        onChange={(e) => setF({ ...f, address: e.target.value })}
+      />
+      <div className="flex gap-2 pt-1">
+        <button
+          disabled={saving || !f.title.trim()}
+          onClick={async () => {
+            setSaving(true)
+            try {
+              await onSave(f)
+            } finally {
+              setSaving(false)
+            }
+          }}
+          className="flex-1 text-[11px] font-semibold text-white bg-[#C0392B] rounded px-2 py-1.5 disabled:opacity-50"
+        >
+          {saving ? 'Saving…' : 'Save'}
+        </button>
+        <button
+          onClick={onCancel}
+          className="flex-1 text-[11px] font-medium text-[#6b7280] bg-white border border-[#e5e7eb] rounded px-2 py-1.5"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  )
+}
+
+type AltFormFields = { name: string; note: string; address: string }
+
+function AltEditForm({
+  onSave,
+  onCancel,
+}: {
+  onSave: (f: AltFormFields) => Promise<void> | void
+  onCancel: () => void
+}) {
+  const [f, setF] = useState<AltFormFields>({ name: '', note: '', address: '' })
+  const [saving, setSaving] = useState(false)
+  const inputCls =
+    'w-full text-[10px] border border-[#e5e7eb] rounded px-1.5 py-1 focus:outline-none focus:border-[#B8860B]'
+  return (
+    <div className="mt-1 p-1.5 bg-white border border-[#B8860B] rounded space-y-1">
+      <input
+        className={inputCls}
+        placeholder="Name (required)"
+        value={f.name}
+        onChange={(e) => setF({ ...f, name: e.target.value })}
+      />
+      <input
+        className={inputCls}
+        placeholder="Note (optional)"
+        value={f.note}
+        onChange={(e) => setF({ ...f, note: e.target.value })}
+      />
+      <input
+        className={inputCls}
+        placeholder="Address (optional)"
+        value={f.address}
+        onChange={(e) => setF({ ...f, address: e.target.value })}
+      />
+      <div className="flex gap-1 pt-0.5">
+        <button
+          disabled={saving || !f.name.trim()}
+          onClick={async () => {
+            setSaving(true)
+            try {
+              await onSave(f)
+            } finally {
+              setSaving(false)
+            }
+          }}
+          className="flex-1 text-[10px] font-semibold text-white bg-[#B8860B] rounded px-1.5 py-1 disabled:opacity-50"
+        >
+          {saving ? 'Saving…' : 'Save'}
+        </button>
+        <button
+          onClick={onCancel}
+          className="flex-1 text-[10px] font-medium text-[#6b7280] bg-white border border-[#e5e7eb] rounded px-1.5 py-1"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function ActivityCard({
+  activity,
+  editMode,
+  checked,
+  onToggleCheck,
+  selectedAltId,
+  onSelectAlt,
+  onSaveEdit,
+  onRemove,
+  onMoveUp,
+  onMoveDown,
+  onAddAlt,
+  canMoveUp,
+  canMoveDown,
+}: {
+  activity: Activity
+  editMode: boolean
+  checked: boolean
+  onToggleCheck: () => void
+  selectedAltId?: string
+  onSelectAlt: (altId: string) => void
+  onSaveEdit: (next: Activity) => Promise<void>
+  onRemove: () => void
+  onMoveUp: () => void
+  onMoveDown: () => void
+  onAddAlt: (alt: MealAlternative) => Promise<void>
+  canMoveUp: boolean
+  canMoveDown: boolean
+}) {
   const color = typeColor[activity.type]
+  const [altsOpen, setAltsOpen] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [addingAlt, setAddingAlt] = useState(false)
   const hasAlternatives = activity.alternatives && activity.alternatives.length > 0
+
+  const selectedAlt = selectedAltId
+    ? activity.alternatives?.find((a) => a.id === selectedAltId)
+    : undefined
+  const displayTitle = selectedAlt?.name ?? activity.title
 
   return (
     <div
@@ -42,24 +291,56 @@ function ActivityCard({ activity }: { activity: Activity }) {
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-start gap-1.5 flex-1 min-w-0">
           <span className="text-[11px] leading-none mt-[1px]">{typeEmoji[activity.type]}</span>
-          <h3 className="font-bold text-[11px] leading-snug text-[#1a1a1a]">
-            {activity.title}
-            {activity.isTBD && (
-              <span className="ml-1.5 inline-block px-1 py-[1px] text-[8px] font-semibold rounded bg-yellow-200 text-yellow-900 align-middle">
-                TBD
-              </span>
+          <div className="min-w-0 flex-1">
+            <h3 className="font-bold text-[11px] leading-snug text-[#1a1a1a]">
+              {displayTitle}
+              {activity.isTBD && (
+                <span className="ml-1.5 inline-block px-1 py-[1px] text-[8px] font-semibold rounded bg-yellow-200 text-yellow-900 align-middle">
+                  TBD
+                </span>
+              )}
+            </h3>
+            {selectedAlt && (
+              <p className="text-[9px] text-[#9ca3af] line-through mt-[1px]">
+                {activity.title}
+              </p>
             )}
-          </h3>
+          </div>
         </div>
-        <button
-          onClick={() => setChecked(!checked)}
-          className="flex-shrink-0 w-[15px] h-[15px] rounded-full border border-[#d1d5db] flex items-center justify-center"
-          aria-label="mark done"
-        >
-          {checked && (
-            <span className="block w-[8px] h-[8px] rounded-full" style={{ background: color }} />
-          )}
-        </button>
+        {editMode ? (
+          <button
+            onClick={() => setEditing(!editing)}
+            className="flex-shrink-0 w-[20px] h-[20px] rounded-full flex items-center justify-center text-[11px] text-[#C0392B] hover:bg-[#fff8f8] border border-[#fde8e8]"
+            aria-label="edit"
+          >
+            ✎
+          </button>
+        ) : (
+          <button
+            onClick={onToggleCheck}
+            className="flex-shrink-0 w-[15px] h-[15px] rounded-full border flex items-center justify-center"
+            style={{
+              borderColor: checked ? '#16a34a' : '#d1d5db',
+              backgroundColor: checked ? '#16a34a' : 'transparent',
+            }}
+            aria-label="mark done"
+          >
+            {checked && (
+              <svg
+                viewBox="0 0 12 12"
+                width="9"
+                height="9"
+                fill="none"
+                stroke="white"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M2 6l2.5 2.5L10 3" />
+              </svg>
+            )}
+          </button>
+        )}
       </div>
 
       {activity.description && (
@@ -99,63 +380,238 @@ function ActivityCard({ activity }: { activity: Activity }) {
 
           {altsOpen && (
             <div className="mt-1.5 space-y-1 bg-[#fafaf8] rounded p-1.5 border border-[#e5e7eb]">
-              {activity.alternatives!.map((alt: MealAlternative) => (
-                <button
-                  key={alt.id}
-                  onClick={() => setSelectedAlt(selectedAlt === alt.id ? null : alt.id)}
-                  className="w-full text-left flex items-start gap-1.5 p-1.5 rounded hover:bg-white transition-colors"
-                  style={{
-                    backgroundColor: selectedAlt === alt.id ? '#ffffff' : 'transparent',
-                    border: selectedAlt === alt.id ? '1px solid #B8860B' : '1px solid transparent',
-                  }}
-                >
-                  <span
-                    className="flex-shrink-0 mt-[2px] w-[10px] h-[10px] rounded-full border"
+              {activity.alternatives!.map((alt) => {
+                const isSel = selectedAltId === alt.id
+                return (
+                  <button
+                    key={alt.id}
+                    onClick={() => onSelectAlt(alt.id)}
+                    className="w-full text-left flex items-start gap-1.5 p-1.5 rounded hover:bg-white transition-colors"
                     style={{
-                      borderColor: '#B8860B',
-                      backgroundColor: selectedAlt === alt.id ? '#B8860B' : '#ffffff',
+                      backgroundColor: isSel ? '#ffffff' : 'transparent',
+                      border: isSel ? '1px solid #B8860B' : '1px solid transparent',
                     }}
-                  />
-                  <span className="flex-1 min-w-0">
-                    <span className="block text-[10px] font-medium text-[#1a1a1a]">{alt.name}</span>
-                    {alt.note && (
-                      <span className="block text-[9px] text-[#6b7280] mt-[1px]">{alt.note}</span>
-                    )}
-                    {alt.address && (
-                      <span className="block text-[9px] text-[#9ca3af] mt-[1px]">📍 {alt.address}</span>
-                    )}
-                  </span>
-                </button>
-              ))}
-              <button className="w-full text-left text-[9px] text-[#9ca3af] hover:text-[#B8860B] p-1.5 italic">
-                + Add alternative
-              </button>
+                  >
+                    <span
+                      className="flex-shrink-0 mt-[2px] w-[10px] h-[10px] rounded-full border"
+                      style={{
+                        borderColor: '#B8860B',
+                        backgroundColor: isSel ? '#B8860B' : '#ffffff',
+                      }}
+                    />
+                    <span className="flex-1 min-w-0">
+                      <span className="block text-[10px] font-medium text-[#1a1a1a]">{alt.name}</span>
+                      {alt.note && (
+                        <span className="block text-[9px] text-[#6b7280] mt-[1px]">{alt.note}</span>
+                      )}
+                      {alt.address && (
+                        <span className="block text-[9px] text-[#9ca3af] mt-[1px]">📍 {alt.address}</span>
+                      )}
+                    </span>
+                  </button>
+                )
+              })}
+              {editMode && activity.type === 'meal' && (
+                <>
+                  {addingAlt ? (
+                    <AltEditForm
+                      onCancel={() => setAddingAlt(false)}
+                      onSave={async (f) => {
+                        const newAlt: MealAlternative = {
+                          id: `${activity.id}-alt${Date.now()}`,
+                          name: f.name.trim(),
+                        }
+                        if (f.note.trim()) newAlt.note = f.note.trim()
+                        if (f.address.trim()) newAlt.address = f.address.trim()
+                        await onAddAlt(newAlt)
+                        setAddingAlt(false)
+                      }}
+                    />
+                  ) : (
+                    <button
+                      onClick={() => setAddingAlt(true)}
+                      className="w-full text-left text-[10px] text-[#B8860B] hover:text-[#8a6400] p-1.5 font-medium"
+                    >
+                      + Add alternative
+                    </button>
+                  )}
+                </>
+              )}
             </div>
           )}
+        </div>
+      )}
+
+      {editMode && !hasAlternatives && activity.type === 'meal' && (
+        <div className="mt-2">
+          {addingAlt ? (
+            <AltEditForm
+              onCancel={() => setAddingAlt(false)}
+              onSave={async (f) => {
+                const newAlt: MealAlternative = {
+                  id: `${activity.id}-alt${Date.now()}`,
+                  name: f.name.trim(),
+                }
+                if (f.note.trim()) newAlt.note = f.note.trim()
+                if (f.address.trim()) newAlt.address = f.address.trim()
+                await onAddAlt(newAlt)
+                setAddingAlt(false)
+              }}
+            />
+          ) : (
+            <button
+              onClick={() => setAddingAlt(true)}
+              className="text-[10px] font-medium text-[#B8860B] hover:text-[#8a6400]"
+            >
+              + Add alternative
+            </button>
+          )}
+        </div>
+      )}
+
+      {editMode && editing && (
+        <ActivityEditForm
+          initial={fieldsFromActivity(activity)}
+          onCancel={() => setEditing(false)}
+          onSave={async (f) => {
+            const next = applyFields(activity, f)
+            await onSaveEdit(next)
+            setEditing(false)
+          }}
+        />
+      )}
+
+      {editMode && (
+        <div className="mt-2 pt-2 border-t border-[#f3f4f6] flex items-center gap-2 text-[10px]">
+          <button
+            disabled={!canMoveUp}
+            onClick={onMoveUp}
+            className="text-[#6b7280] hover:text-[#1a1a1a] disabled:opacity-30"
+          >
+            ⬆ Up
+          </button>
+          <button
+            disabled={!canMoveDown}
+            onClick={onMoveDown}
+            className="text-[#6b7280] hover:text-[#1a1a1a] disabled:opacity-30"
+          >
+            ⬇ Down
+          </button>
+          <button
+            onClick={onRemove}
+            className="ml-auto text-[#C0392B] hover:text-[#8b1f15] font-medium"
+          >
+            ✕ Remove
+          </button>
         </div>
       )}
     </div>
   )
 }
 
-export default function DayTimeline({ day }: { day: Day }) {
-  const totalActs = day.activities.length
+export default function DayTimeline({
+  day,
+  editMode,
+}: {
+  day: Day
+  editMode: boolean
+}) {
+  const [checkoffs, setCheckoffs] = useState<Record<string, boolean>>({})
+  const [mealSelections, setMealSelections] = useState<Record<string, string>>({})
+  const [showAddForm, setShowAddForm] = useState(false)
+
+  useEffect(() => {
+    const u1 = subscribeToCheckoffs(setCheckoffs)
+    const u2 = subscribeToMealSelections(setMealSelections)
+    return () => {
+      u1()
+      u2()
+    }
+  }, [])
+
+  const actionable = day.activities.filter(
+    (a) => a.type !== 'free' && a.type !== 'accommodation'
+  )
+  const totalActs = actionable.length
+  const completedCount = actionable.filter((a) => checkoffs[a.id]).length
+  const pct = totalActs > 0 ? (completedCount / totalActs) * 100 : 0
+
+  const handleToggle = async (id: string) => {
+    const current = !!checkoffs[id]
+    setCheckoffs((prev) => ({ ...prev, [id]: !current }))
+    try {
+      await toggleCheckoff(id, current)
+    } catch {
+      setCheckoffs((prev) => ({ ...prev, [id]: current }))
+    }
+  }
+
+  const handleSelectAlt = async (activityId: string, altId: string) => {
+    setMealSelections((prev) => ({ ...prev, [activityId]: altId }))
+    await setMealSelection(activityId, altId)
+  }
+
+  const handleSaveEdit = async (updated: Activity) => {
+    const next = day.activities.map((a) => (a.id === updated.id ? updated : a))
+    await saveDayActivities(day.id, next)
+  }
+
+  const handleRemove = async (activityId: string) => {
+    if (typeof window !== 'undefined' && !window.confirm('Remove this activity?')) return
+    const next = day.activities.filter((a) => a.id !== activityId)
+    await saveDayActivities(day.id, next)
+  }
+
+  const handleMove = async (index: number, dir: 'up' | 'down') => {
+    const target = dir === 'up' ? index - 1 : index + 1
+    if (target < 0 || target >= day.activities.length) return
+    const arr = [...day.activities]
+    ;[arr[index], arr[target]] = [arr[target], arr[index]]
+    await saveDayActivities(day.id, arr)
+  }
+
+  const handleAddActivity = async (f: ActivityFormFields) => {
+    const id = `d${day.dayNumber}-a${Date.now()}`
+    const next = applyFields({ id }, f)
+    await saveDayActivities(day.id, [...day.activities, next])
+    setShowAddForm(false)
+  }
+
+  const handleAddAlt = async (activityId: string, alt: MealAlternative) => {
+    await addAlternative(day.id, activityId, alt, day.activities)
+  }
 
   const handleAskClaude = () => {
     if (typeof window !== 'undefined') {
-      // Phase 3 placeholder
       console.log('Ask Claude — coming soon')
     }
   }
 
   return (
     <div className="px-4 py-4">
+      {editMode && (
+        <div className="mb-3 flex items-center gap-2 bg-[#fff8f8] border border-[#fde8e8] rounded-lg px-3 py-2">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C0392B] opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-[#C0392B]" />
+          </span>
+          <span className="text-[11px] font-semibold text-[#C0392B]">
+            Edit mode — changes sync live
+          </span>
+        </div>
+      )}
+
       <div className="flex items-start justify-between gap-3 mb-3">
         <div>
-          <div className="flex items-baseline gap-2">
+          <div className="flex items-baseline gap-2 flex-wrap">
             <span className="text-3xl font-bold text-[#C0392B] leading-none">
               D{day.dayNumber}
             </span>
+            {editMode && (
+              <span className="inline-block px-1.5 py-[2px] rounded-full text-[9px] font-semibold bg-[#C0392B] text-white">
+                ✎ Editing
+              </span>
+            )}
           </div>
           <h2 className="text-base font-semibold text-[#1a1a1a] mt-1">{day.title}</h2>
           <p className="text-[11px] text-[#6b7280] mt-[2px]">
@@ -172,10 +628,16 @@ export default function DayTimeline({ day }: { day: Day }) {
 
       <div className="mb-4">
         <div className="flex items-center justify-between text-[10px] text-[#6b7280] mb-1">
-          <span>0 of {totalActs} activities</span>
+          <span>
+            {completedCount} of {totalActs} activities
+          </span>
+          {totalActs > 0 && <span>{Math.round(pct)}%</span>}
         </div>
         <div className="h-[3px] bg-[#fde8e8] rounded-full overflow-hidden">
-          <div className="h-full bg-[#C0392B]" style={{ width: '0%' }} />
+          <div
+            className="h-full bg-[#C0392B] transition-all duration-300 ease-out"
+            style={{ width: `${pct}%` }}
+          />
         </div>
       </div>
 
@@ -198,18 +660,54 @@ export default function DayTimeline({ day }: { day: Day }) {
               </div>
 
               <div className="flex-1 min-w-0 pb-3">
-                <ActivityCard activity={act} />
+                <ActivityCard
+                  activity={act}
+                  editMode={editMode}
+                  checked={!!checkoffs[act.id]}
+                  onToggleCheck={() => handleToggle(act.id)}
+                  selectedAltId={mealSelections[act.id]}
+                  onSelectAlt={(altId) => handleSelectAlt(act.id, altId)}
+                  onSaveEdit={handleSaveEdit}
+                  onRemove={() => handleRemove(act.id)}
+                  onMoveUp={() => handleMove(idx, 'up')}
+                  onMoveDown={() => handleMove(idx, 'down')}
+                  onAddAlt={(alt) => handleAddAlt(act.id, alt)}
+                  canMoveUp={idx > 0}
+                  canMoveDown={idx < day.activities.length - 1}
+                />
               </div>
             </div>
           )
         })}
       </div>
 
+      {editMode && (
+        <div className="mt-3">
+          {showAddForm ? (
+            <div className="border-2 border-dashed border-[#C0392B] rounded-lg p-2 bg-white">
+              <p className="text-[11px] font-semibold text-[#C0392B] mb-2">
+                + Add activity to {day.title}
+              </p>
+              <ActivityEditForm
+                initial={blankFields()}
+                onCancel={() => setShowAddForm(false)}
+                onSave={handleAddActivity}
+              />
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowAddForm(true)}
+              className="w-full border-2 border-dashed border-[#C0392B] text-[#C0392B] rounded-lg py-3 text-[11px] font-semibold hover:bg-[#fff8f8] transition-colors"
+            >
+              + Add activity to {day.title}
+            </button>
+          )}
+        </div>
+      )}
+
       {day.ideas && day.ideas.length > 0 && (
         <div className="mt-4 pt-4 border-t border-[#e5e7eb]">
-          <h3 className="text-xs font-semibold text-[#1a1a1a] mb-2">
-            💡 Ideas for this day
-          </h3>
+          <h3 className="text-xs font-semibold text-[#1a1a1a] mb-2">💡 Ideas for this day</h3>
           <p className="text-[10px] text-[#9ca3af] mb-2 italic">Optional — not in the plan</p>
           <div className="space-y-1.5">
             {day.ideas.map((idea, i) => (
