@@ -63,6 +63,15 @@ const typeLabel: Record<ActivityType, string> = {
   free: 'Free',
 }
 
+export const STAY_COORDS: Record<string, { lat: number; lng: number }> = {
+  'gw-stay-1': { lat: 35.6284, lng: 139.7387 }, // Shinagawa Hotel
+  'gw-stay-2': { lat: 34.9977, lng: 135.759 }, // Kyoto Rental
+  'gw-stay-3': { lat: 35.5793, lng: 139.7348 }, // Omori Rental
+  'hk-stay-1': { lat: 43.0686, lng: 141.3508 }, // Royal Park Canvas Sapporo
+  'hk-stay-2': { lat: 42.9984, lng: 141.1243 }, // Jozankei Yurakusoan
+  'hk-stay-3': { lat: 43.0686, lng: 141.3508 }, // Royal Park Canvas Sapporo (return)
+}
+
 function makeNumberedIcon(num: number, color: string, checked: boolean) {
   const check = checked
     ? `<div style="position:absolute;top:-3px;right:-3px;width:14px;height:14px;border-radius:50%;background:#16a34a;display:flex;align-items:center;justify-content:center;border:1.5px solid white;">
