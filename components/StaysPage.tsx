@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import type { Accommodation } from '@/data/itinerary'
 import { saveStays, subscribeToStays } from '@/lib/firestore'
+import { googleMapsUrl } from '@/lib/maps'
 
 type StayType = Accommodation['type']
 
@@ -241,9 +242,15 @@ function StayCard({
           </span>
         </div>
 
-        <p className="text-[10px] text-[#6b7280] mb-2 flex items-start gap-1">
-          <span>📍</span>
-          <span>{stay.address}</span>
+        <p className="text-[10px] mb-2">
+          <a
+            href={googleMapsUrl(stay.address)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-[#6b7280] underline decoration-dotted underline-offset-2 hover:text-[#C0392B]"
+          >
+            📍 {stay.address}
+          </a>
         </p>
 
         <div className="mb-2">

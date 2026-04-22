@@ -18,6 +18,7 @@ import {
   subscribeToMealSelections,
   toggleCheckoff,
 } from '@/lib/firestore'
+import { googleMapsUrl } from '@/lib/maps'
 
 const DayMap = dynamic(() => import('@/components/DayMap'), { ssr: false })
 const AIDrawer = dynamic(() => import('@/components/AIDrawer'), { ssr: false })
@@ -378,7 +379,16 @@ function ActivityCard({
       )}
 
       {activity.address && (
-        <p className="text-[9px] text-[#6b7280] mt-1 leading-snug">📍 {activity.address}</p>
+        <p className="text-[9px] mt-1 leading-snug">
+          <a
+            href={googleMapsUrl(activity.address)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-[#6b7280] underline decoration-dotted underline-offset-2 hover:text-[#C0392B]"
+          >
+            📍 {activity.address}
+          </a>
+        </p>
       )}
 
       {activity.highlight && (
@@ -437,7 +447,10 @@ function ActivityCard({
                         </span>
                       </span>
                       {activity.address && (
-                        <span className="block text-[9px] text-[#9ca3af] mt-[1px]">
+                        <span
+                          className="block text-[9px] text-[#6b7280] mt-[1px] underline decoration-dotted underline-offset-2 hover:text-[#C0392B] cursor-pointer"
+                          onClick={(e) => { e.stopPropagation(); window.open(googleMapsUrl(activity.address!), '_blank', 'noopener,noreferrer') }}
+                        >
                           📍 {activity.address}
                         </span>
                       )}
@@ -470,7 +483,12 @@ function ActivityCard({
                         <span className="block text-[9px] text-[#6b7280] mt-[1px]">{alt.note}</span>
                       )}
                       {alt.address && (
-                        <span className="block text-[9px] text-[#9ca3af] mt-[1px]">📍 {alt.address}</span>
+                        <span
+                          className="block text-[9px] text-[#6b7280] mt-[1px] underline decoration-dotted underline-offset-2 hover:text-[#C0392B] cursor-pointer"
+                          onClick={(e) => { e.stopPropagation(); window.open(googleMapsUrl(alt.address!), '_blank', 'noopener,noreferrer') }}
+                        >
+                          📍 {alt.address}
+                        </span>
                       )}
                     </span>
                   </button>

@@ -5,6 +5,7 @@ import 'leaflet/dist/leaflet.css'
 import { useEffect, useState } from 'react'
 import { MapContainer, Marker, Polyline, TileLayer, useMap } from 'react-leaflet'
 import type { Activity, ActivityType, Day, MealAlternative } from '@/data/itinerary'
+import { googleMapsUrl } from '@/lib/maps'
 
 // Fix default Leaflet marker paths under webpack/Next
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -68,6 +69,15 @@ function makeAltIcon() {
   })
 }
 
+function makeAccommodationIcon() {
+  return L.divIcon({
+    html: `<div style="width:34px;height:34px;border-radius:50%;background:#7c3aed;border:2px solid white;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,0.3);">🏨</div>`,
+    className: '',
+    iconSize: [34, 34],
+    iconAnchor: [17, 17],
+  })
+}
+
 function FitBounds({ positions }: { positions: [number, number][] }) {
   const map = useMap()
   useEffect(() => {
@@ -109,6 +119,13 @@ export default function DayMap({
       a.type !== 'accommodation'
   )
 
+  const accommodationActivities = day.activities.filter(
+    (a) =>
+      a.lat !== undefined &&
+      a.lng !== undefined &&
+      a.type === 'accommodation'
+  )
+
   const altEntries: { parent: Activity; alt: MealAlternative }[] = []
   day.activities.forEach((a) => {
     if (a.type !== 'meal' || !a.alternatives) return
@@ -119,7 +136,7 @@ export default function DayMap({
     })
   })
 
-  if (routeActivities.length === 0 && altEntries.length === 0) {
+  if (routeActivities.length === 0 && altEntries.length === 0 && accommodationActivities.length === 0) {
     return (
       <div
         className="flex items-center justify-center text-[11px] text-[#9ca3af]"
@@ -134,8 +151,13 @@ export default function DayMap({
   const allPositions: [number, number][] = [
     ...routePositions,
     ...altEntries.map((e) => [e.alt.lat!, e.alt.lng!] as [number, number]),
+    ...accommodationActivities.map((a) => [a.lat!, a.lng!] as [number, number]),
   ]
   const center = allPositions[0] ?? ([35.6762, 139.6503] as [number, number])
+
+  const stripActivities = day.activities.filter(
+    (a) => a.lat !== undefined && a.lng !== undefined && a.type !== 'free'
+  )
 
   return (
     <div
@@ -171,6 +193,18 @@ export default function DayMap({
           />
         ))}
 
+        {accommodationActivities.map((act) => (
+          <Marker
+            key={act.id}
+            position={[act.lat!, act.lng!]}
+            icon={makeAccommodationIcon()}
+            zIndexOffset={500}
+            eventHandlers={{
+              click: () => setSheet({ kind: 'activity', activity: act, order: 0 }),
+            }}
+          />
+        ))}
+
         {routeActivities.map((act, i) => {
           const checked = !!checkoffs[act.id]
           const color = typePinColor[act.type]
@@ -187,6 +221,51 @@ export default function DayMap({
           )
         })}
       </MapContainer>
+
+      {stripActivities.length > 0 && (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            zIndex: 500,
+            padding: '16px 12px 8px',
+            background: 'linear-gradient(to top, rgba(255,255,255,0.85) 0%, transparent 100%)',
+            pointerEvents: 'none',
+          }}
+        >
+          <div
+            className="flex gap-1.5 overflow-x-auto"
+            style={{ scrollbarWidth: 'none', pointerEvents: 'auto' } as React.CSSProperties}
+          >
+            {stripActivities.map((act) => {
+              const isAccom = act.type === 'accommodation'
+              const routeIdx = routeActivities.indexOf(act)
+              const chipColor = isAccom ? '#7c3aed' : typePinColor[act.type]
+              return (
+                <button
+                  key={act.id}
+                  onClick={() =>
+                    setSheet({
+                      kind: 'activity',
+                      activity: act,
+                      order: isAccom ? 0 : routeIdx + 1,
+                    })
+                  }
+                  className="flex-shrink-0 flex items-center gap-1 px-2 py-1 rounded-full text-white text-[10px] font-bold whitespace-nowrap"
+                  style={{ background: chipColor, boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }}
+                >
+                  <span>{isAccom ? '🏨' : routeIdx + 1}</span>
+                  <span className="text-[9px] font-normal opacity-90 max-w-[70px] truncate">
+                    {act.title}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {sheet?.kind === 'activity' && (
         <ActivitySheet
@@ -276,7 +355,9 @@ function ActivitySheet({
         <span className="text-base leading-none mt-[2px]">{typeEmoji[activity.type]}</span>
         <div className="min-w-0">
           <h3 className="text-sm font-bold text-[#1a1a1a] leading-snug">
-            <span className="text-[#C0392B] mr-1">#{order}</span>
+            {activity.type !== 'accommodation' && (
+              <span className="text-[#C0392B] mr-1">#{order}</span>
+            )}
             {activity.title}
           </h3>
           <div className="flex items-center gap-1.5 mt-1 flex-wrap">
@@ -303,7 +384,16 @@ function ActivitySheet({
       )}
 
       {activity.address && (
-        <p className="text-[10px] text-[#6b7280] mb-2 leading-snug">📍 {activity.address}</p>
+        <p className="text-[10px] mb-2 leading-snug">
+          <a
+            href={googleMapsUrl(activity.address)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-[#6b7280] underline decoration-dotted underline-offset-2 hover:text-[#C0392B]"
+          >
+            📍 {activity.address}
+          </a>
+        </p>
       )}
 
       {activity.highlight && (
@@ -355,7 +445,10 @@ function ActivitySheet({
                       </span>
                     </span>
                     {activity.address && (
-                      <span className="block text-[10px] text-[#9ca3af] mt-[1px]">
+                      <span
+                        className="block text-[10px] text-[#6b7280] mt-[1px] underline decoration-dotted underline-offset-2 hover:text-[#C0392B] cursor-pointer"
+                        onClick={(e) => { e.stopPropagation(); window.open(googleMapsUrl(activity.address!), '_blank', 'noopener,noreferrer') }}
+                      >
                         📍 {activity.address}
                       </span>
                     )}
@@ -395,17 +488,19 @@ function ActivitySheet({
         </div>
       )}
 
-      <button
-        onClick={() => onToggleCheckoff(activity.id, checked)}
-        className="w-full rounded-md py-2 text-[12px] font-semibold transition-colors"
-        style={{
-          backgroundColor: checked ? '#16a34a' : '#ffffff',
-          color: checked ? '#ffffff' : '#16a34a',
-          border: '1.5px solid #16a34a',
-        }}
-      >
-        {checked ? 'Done ✓ — tap to undo' : 'Mark as done ✓'}
-      </button>
+      {activity.type !== 'accommodation' && (
+        <button
+          onClick={() => onToggleCheckoff(activity.id, checked)}
+          className="w-full rounded-md py-2 text-[12px] font-semibold transition-colors"
+          style={{
+            backgroundColor: checked ? '#16a34a' : '#ffffff',
+            color: checked ? '#ffffff' : '#16a34a',
+            border: '1.5px solid #16a34a',
+          }}
+        >
+          {checked ? 'Done ✓ — tap to undo' : 'Mark as done ✓'}
+        </button>
+      )}
     </div>
   )
 }
@@ -449,7 +544,16 @@ function AltSheet({
 
       {alt.note && <p className="text-[11px] text-[#6b7280] mb-2 leading-snug">{alt.note}</p>}
       {alt.address && (
-        <p className="text-[10px] text-[#6b7280] mb-3 leading-snug">📍 {alt.address}</p>
+        <p className="text-[10px] mb-3 leading-snug">
+          <a
+            href={googleMapsUrl(alt.address)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-[#6b7280] underline decoration-dotted underline-offset-2 hover:text-[#C0392B]"
+          >
+            📍 {alt.address}
+          </a>
+        </p>
       )}
 
       <button
