@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic'
 import { useEffect, useState } from 'react'
 import type {
+  Accommodation,
   Activity,
   ActivityType,
   Day,
@@ -729,9 +730,11 @@ function IdeasSection({
 export default function DayTimeline({
   day,
   editMode,
+  accommodations,
 }: {
   day: Day
   editMode: boolean
+  accommodations: Accommodation[]
 }) {
   const [checkoffs, setCheckoffs] = useState<Record<string, boolean>>({})
   const [mealSelections, setMealSelections] = useState<Record<string, string>>({})
@@ -921,6 +924,7 @@ export default function DayTimeline({
           mealSelections={mealSelections}
           onToggleCheckoff={handleToggle}
           onSelectAlt={handleSelectAlt}
+          accommodations={accommodations}
         />
       )}
 

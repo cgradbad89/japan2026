@@ -4,7 +4,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useEffect, useState } from 'react'
 import { MapContainer, Marker, Polyline, TileLayer, useMap } from 'react-leaflet'
-import type { Activity, ActivityType, Day, MealAlternative } from '@/data/itinerary'
+import type { Accommodation, Activity, ActivityType, Day, MealAlternative } from '@/data/itinerary'
 import { googleMapsUrl } from '@/lib/maps'
 
 // Fix default Leaflet marker paths under webpack/Next
@@ -15,6 +15,15 @@ L.Icon.Default.mergeOptions({
   iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 })
+
+const STAY_COORDS: Record<string, { lat: number; lng: number }> = {
+  'gw-stay-1': { lat: 35.6284, lng: 139.7387 },
+  'gw-stay-2': { lat: 34.9977, lng: 135.7590 },
+  'gw-stay-3': { lat: 35.5793, lng: 139.7348 },
+  'hk-stay-1': { lat: 43.0686, lng: 141.3508 },
+  'hk-stay-2': { lat: 42.4808, lng: 141.0183 },
+  'hk-stay-3': { lat: 43.0602, lng: 141.3527 },
+}
 
 const typePinColor: Record<ActivityType, string> = {
   sightseeing: '#C0392B',
@@ -102,12 +111,14 @@ export default function DayMap({
   mealSelections,
   onToggleCheckoff,
   onSelectAlt,
+  accommodations,
 }: {
   day: Day
   checkoffs: Record<string, boolean>
   mealSelections: Record<string, string>
   onToggleCheckoff: (id: string, current: boolean) => void
   onSelectAlt: (activityId: string, altId: string) => void
+  accommodations: Accommodation[]
 }) {
   const [sheet, setSheet] = useState<Sheet>(null)
 
@@ -136,7 +147,20 @@ export default function DayMap({
     })
   })
 
-  if (routeActivities.length === 0 && altEntries.length === 0 && accommodationActivities.length === 0) {
+  const dayDate = new Date(day.date)
+  const dayAccommodations = accommodations.filter((acc) => {
+    const year = 2026
+    const checkIn = new Date(`${acc.checkIn} ${year}`)
+    const checkOut = new Date(`${acc.checkOut} ${year}`)
+    return dayDate >= checkIn && dayDate <= checkOut && acc.id in STAY_COORDS
+  })
+
+  if (
+    routeActivities.length === 0 &&
+    altEntries.length === 0 &&
+    accommodationActivities.length === 0 &&
+    dayAccommodations.length === 0
+  ) {
     return (
       <div
         className="flex items-center justify-center text-[11px] text-[#9ca3af]"
@@ -152,12 +176,15 @@ export default function DayMap({
     ...routePositions,
     ...altEntries.map((e) => [e.alt.lat!, e.alt.lng!] as [number, number]),
     ...accommodationActivities.map((a) => [a.lat!, a.lng!] as [number, number]),
+    ...dayAccommodations.map((acc) => [STAY_COORDS[acc.id].lat, STAY_COORDS[acc.id].lng] as [number, number]),
   ]
   const center = allPositions[0] ?? ([35.6762, 139.6503] as [number, number])
 
   const stripActivities = day.activities.filter(
     (a) => a.lat !== undefined && a.lng !== undefined && a.type !== 'free'
   )
+
+  const showStrip = stripActivities.length > 0 || dayAccommodations.length > 0
 
   return (
     <div
@@ -171,8 +198,10 @@ export default function DayMap({
         scrollWheelZoom
       >
         <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; OpenStreetMap contributors'
+          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+          attribution='&copy; OpenStreetMap contributors &copy; CARTO'
+          subdomains='abcd'
+          maxZoom={19}
         />
         <FitBounds positions={allPositions} />
 
@@ -205,6 +234,29 @@ export default function DayMap({
           />
         ))}
 
+        {dayAccommodations.map((acc) => {
+          const coords = STAY_COORDS[acc.id]
+          const syntheticActivity: Activity = {
+            id: acc.id,
+            title: acc.name,
+            type: 'accommodation',
+            address: acc.address,
+            highlight: acc.notes || undefined,
+            note: `${acc.checkIn} → ${acc.checkOut} · ${acc.nights} nights`,
+          }
+          return (
+            <Marker
+              key={acc.id}
+              position={[coords.lat, coords.lng]}
+              icon={makeAccommodationIcon()}
+              zIndexOffset={500}
+              eventHandlers={{
+                click: () => setSheet({ kind: 'activity', activity: syntheticActivity, order: 0 }),
+              }}
+            />
+          )
+        })}
+
         {routeActivities.map((act, i) => {
           const checked = !!checkoffs[act.id]
           const color = typePinColor[act.type]
@@ -222,7 +274,7 @@ export default function DayMap({
         })}
       </MapContainer>
 
-      {stripActivities.length > 0 && (
+      {showStrip && (
         <div
           style={{
             position: 'absolute',
@@ -239,6 +291,29 @@ export default function DayMap({
             className="flex gap-1.5 overflow-x-auto"
             style={{ scrollbarWidth: 'none', pointerEvents: 'auto' } as React.CSSProperties}
           >
+            {dayAccommodations.map((acc) => {
+              const syntheticActivity: Activity = {
+                id: acc.id,
+                title: acc.name,
+                type: 'accommodation',
+                address: acc.address,
+                highlight: acc.notes || undefined,
+                note: `${acc.checkIn} → ${acc.checkOut} · ${acc.nights} nights`,
+              }
+              return (
+                <button
+                  key={acc.id}
+                  onClick={() => setSheet({ kind: 'activity', activity: syntheticActivity, order: 0 })}
+                  className="flex-shrink-0 flex items-center gap-1 px-2 py-1 rounded-full text-white text-[10px] font-bold whitespace-nowrap"
+                  style={{ background: '#7c3aed', boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }}
+                >
+                  <span>🏨</span>
+                  <span className="text-[9px] font-normal opacity-90 max-w-[70px] truncate">
+                    {acc.name}
+                  </span>
+                </button>
+              )
+            })}
             {stripActivities.map((act) => {
               const isAccom = act.type === 'accommodation'
               const routeIdx = routeActivities.indexOf(act)
