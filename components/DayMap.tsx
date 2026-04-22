@@ -16,6 +16,17 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 })
 
+const MONTH_MAP: Record<string, number> = {
+  Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11,
+}
+
+function parseAccDate(str: string): string {
+  const [mon, d] = str.trim().split(' ')
+  const month = String((MONTH_MAP[mon] ?? 0) + 1).padStart(2, '0')
+  const day = String(d).padStart(2, '0')
+  return `2026-${month}-${day}`
+}
+
 const STAY_COORDS: Record<string, { lat: number; lng: number }> = {
   'gw-stay-1': { lat: 35.6284, lng: 139.7387 },
   'gw-stay-2': { lat: 34.9977, lng: 135.7590 },
@@ -122,16 +133,8 @@ export default function DayMap({
 }) {
   const [sheet, setSheet] = useState<Sheet>(null)
 
-  // All located activities for the polyline (includes accommodations, excludes free)
-  const allRoutePoints = day.activities.filter(
-    (a) =>
-      a.lat !== undefined &&
-      a.lng !== undefined &&
-      a.type !== 'free'
-  )
-
-  // Only non-accommodation activities get numbered pins
-  const routeActivities = day.activities.filter(
+  // Activities that get numbered pins (excludes free and accommodation)
+  const numberedPins = day.activities.filter(
     (a) =>
       a.lat !== undefined &&
       a.lng !== undefined &&
@@ -156,17 +159,18 @@ export default function DayMap({
     })
   })
 
-  const dayDate = new Date(day.date)
+  const dayStr = day.date
   const dayAccommodations = accommodations.filter((acc) => {
-    const year = 2026
-    const checkIn = new Date(`${acc.checkIn} ${year}`)
-    const checkOut = new Date(`${acc.checkOut} ${year}`)
-    return dayDate >= checkIn && dayDate <= checkOut && acc.id in STAY_COORDS
+    if (!(acc.id in STAY_COORDS)) return false
+    const checkInStr = parseAccDate(acc.checkIn)
+    const checkOutStr = parseAccDate(acc.checkOut)
+    return dayStr >= checkInStr && dayStr < checkOutStr
   })
 
   if (
-    allRoutePoints.length === 0 &&
+    numberedPins.length === 0 &&
     altEntries.length === 0 &&
+    accommodationActivities.length === 0 &&
     dayAccommodations.length === 0
   ) {
     return (
@@ -179,17 +183,17 @@ export default function DayMap({
     )
   }
 
-  // Build polyline: activity points in order, then prepend/append leg accommodations
-  const basePositions: [number, number][] = allRoutePoints.map((a) => [a.lat!, a.lng!])
+  // Build polyline: numbered-pin positions, with accommodation coords prepended/appended
+  const basePositions: [number, number][] = numberedPins.map((a) => [a.lat!, a.lng!])
   const prependCoords: [number, number][] = []
   const appendCoords: [number, number][] = []
   for (const acc of dayAccommodations) {
     const coords = STAY_COORDS[acc.id]
-    const checkInDate = new Date(`${acc.checkIn} 2026`)
-    const checkOutDate = new Date(`${acc.checkOut} 2026`)
-    if (checkInDate.toDateString() === dayDate.toDateString()) {
+    const checkInStr = parseAccDate(acc.checkIn)
+    const checkOutStr = parseAccDate(acc.checkOut)
+    if (dayStr === checkInStr) {
       appendCoords.push([coords.lat, coords.lng])
-    } else if (checkOutDate.toDateString() === dayDate.toDateString()) {
+    } else if (dayStr === checkOutStr) {
       prependCoords.push([coords.lat, coords.lng])
     }
     // mid-stay: not added to route line
@@ -199,6 +203,7 @@ export default function DayMap({
   const allPositions: [number, number][] = [
     ...polylinePositions,
     ...altEntries.map((e) => [e.alt.lat!, e.alt.lng!] as [number, number]),
+    ...accommodationActivities.map((a) => [a.lat!, a.lng!] as [number, number]),
   ]
   const center = allPositions[0] ?? ([35.6762, 139.6503] as [number, number])
 
@@ -279,7 +284,7 @@ export default function DayMap({
           )
         })}
 
-        {routeActivities.map((act, i) => {
+        {numberedPins.map((act, i) => {
           const checked = !!checkoffs[act.id]
           const color = typePinColor[act.type]
           return (
@@ -338,7 +343,7 @@ export default function DayMap({
             })}
             {stripActivities.map((act) => {
               const isAccom = act.type === 'accommodation'
-              const routeIdx = routeActivities.indexOf(act)
+              const routeIdx = numberedPins.indexOf(act)
               const chipColor = isAccom ? '#7c3aed' : typePinColor[act.type]
               return (
                 <button
