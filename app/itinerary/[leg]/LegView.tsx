@@ -88,8 +88,7 @@ export default function LegView({ leg }: { leg: Leg }) {
               <div className="flex gap-2 py-3 min-w-max" style={{ paddingLeft: 16, paddingRight: 16 }}>
                 {mergedDays.map((d) => {
                   const isActive = d.id === activeDay?.id
-                  const [, mm, dd] = d.date.split('-')
-                  const label = `${parseInt(mm, 10)}/${parseInt(dd, 10)}`
+                  const label = `Day ${d.dayNumber}`
                   return (
                     <button
                       key={d.id}
