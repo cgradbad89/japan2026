@@ -74,7 +74,7 @@ function makeNumberedIcon(num: number, color: string, checked: boolean) {
       <div style="width:32px;height:32px;border-radius:50%;background:${color};border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:13px;opacity:${checked ? 0.7 : 1};">${num}</div>
       ${check}
     </div>`,
-    className: '',
+    className: 'leaflet-pin-icon',
     iconSize: [32, 32],
     iconAnchor: [16, 16],
   })
@@ -83,7 +83,7 @@ function makeNumberedIcon(num: number, color: string, checked: boolean) {
 function makeAltIcon() {
   return L.divIcon({
     html: `<div style="width:24px;height:24px;border-radius:50%;background:white;border:2px solid #B8860B;opacity:0.65;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></div>`,
-    className: '',
+    className: 'leaflet-pin-icon',
     iconSize: [24, 24],
     iconAnchor: [12, 12],
   })
@@ -92,7 +92,7 @@ function makeAltIcon() {
 function makeAccommodationIcon() {
   return L.divIcon({
     html: `<div style="width:34px;height:34px;border-radius:50%;background:#7c3aed;border:2px solid white;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,0.3);">🏨</div>`,
-    className: '',
+    className: 'leaflet-pin-icon',
     iconSize: [34, 34],
     iconAnchor: [17, 17],
   })
@@ -369,6 +369,18 @@ export default function DayMap({
         </div>
       )}
 
+      {sheet && (
+        <div
+          onClick={() => setSheet(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 1500,
+            background: 'transparent',
+          }}
+        />
+      )}
+
       {sheet?.kind === 'activity' && (
         <ActivitySheet
           activity={sheet.activity}
@@ -397,13 +409,14 @@ export default function DayMap({
 }
 
 const sheetStyle: React.CSSProperties = {
-  position: 'absolute',
+  position: 'fixed',
   bottom: 0,
   left: 0,
   right: 0,
-  zIndex: 1000,
+  zIndex: 2000,
   maxHeight: '70vh',
   overflowY: 'auto',
+  WebkitOverflowScrolling: 'touch',
   background: 'white',
   borderRadius: '16px 16px 0 0',
   borderTop: '0.5px solid #e5e7eb',
@@ -440,14 +453,17 @@ function ActivitySheet({
   const color = typePinColor[activity.type]
   const selectedAltId = mealSelections[activity.id]
   return (
-    <div style={sheetStyle}>
+    <div style={sheetStyle} onClick={(e) => e.stopPropagation()}>
       <div className="flex justify-center mb-2">
         <div style={handleStyle} />
       </div>
       <button
-        onClick={onClose}
+        onClick={(e) => {
+          e.stopPropagation()
+          onClose()
+        }}
         className="absolute top-1 right-1 rounded-full flex items-center justify-center text-[#6b7280] hover:bg-[#f3f4f6]"
-        style={{ width: 44, height: 44, fontSize: 22 }}
+        style={{ width: 44, height: 44, fontSize: 22, cursor: 'pointer' }}
         aria-label="close"
       >
         ×
@@ -618,14 +634,17 @@ function AltSheet({
   onSelect: () => void
 }) {
   return (
-    <div style={sheetStyle}>
+    <div style={sheetStyle} onClick={(e) => e.stopPropagation()}>
       <div className="flex justify-center mb-2">
         <div style={handleStyle} />
       </div>
       <button
-        onClick={onClose}
+        onClick={(e) => {
+          e.stopPropagation()
+          onClose()
+        }}
         className="absolute top-1 right-1 rounded-full flex items-center justify-center text-[#6b7280] hover:bg-[#f3f4f6]"
-        style={{ width: 44, height: 44, fontSize: 22 }}
+        style={{ width: 44, height: 44, fontSize: 22, cursor: 'pointer' }}
         aria-label="close"
       >
         ×

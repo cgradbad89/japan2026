@@ -33,3 +33,12 @@ body {
     display: none;
   }
 }
+
+.leaflet-pin-icon {
+  cursor: pointer !important;
+}
+
+/* Increase touch target for Leaflet markers on mobile */
+.leaflet-marker-icon {
+  touch-action: none;
+}
