@@ -101,7 +101,7 @@ export default function Home() {
               <div className="min-w-0">
                 <h2 className="text-lg font-bold text-[#1a1a1a]">Hokkaido</h2>
                 <p className="text-[11px] text-[#6b7280] mt-1">
-                  May 11–15 · Sapporo & Noboribetsu · John & Sabrina
+                  May 11–15 · Sapporo & Jozankei · John & Sabrina
                 </p>
               </div>
               <span className="text-[#C0392B] text-xl flex-shrink-0 group-hover:translate-x-1 transition-transform">
