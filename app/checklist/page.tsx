@@ -111,7 +111,11 @@ export default function ChecklistPage() {
       <HubBanner />
 
       <main className="max-w-2xl mx-auto px-4 py-6 pb-12">
-        <Link href="/" className="text-[11px] text-[#6b7280] hover:text-[#1a1a1a]">
+        <Link
+          href="/"
+          className="inline-flex items-center text-[12px] text-[#6b7280] hover:text-[#1a1a1a]"
+          style={{ minHeight: 44, padding: '10px 4px 10px 0' }}
+        >
           ← Home
         </Link>
 
@@ -155,10 +159,11 @@ export default function ChecklistPage() {
               }}
             >
               <span
-                className="flex-shrink-0 mt-[1px] flex items-center justify-center rounded-full"
+                className="flex-shrink-0 flex items-center justify-center rounded-full"
                 style={{
                   width: 22,
                   height: 22,
+                  marginTop: 1,
                   border: `1.5px solid ${item.done ? '#16a34a' : '#C0392B'}`,
                   backgroundColor: item.done ? '#16a34a' : 'transparent',
                 }}
@@ -179,8 +184,11 @@ export default function ChecklistPage() {
                 )}
               </span>
               <span
-                className="flex-1 text-[12px] leading-snug"
+                className="flex-1"
                 style={{
+                  fontSize: 12,
+                  lineHeight: 1.4,
+                  whiteSpace: 'normal',
                   color: item.done ? '#9ca3af' : '#1a1a1a',
                   textDecoration: item.done ? 'line-through' : 'none',
                 }}

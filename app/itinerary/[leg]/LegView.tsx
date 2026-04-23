@@ -42,16 +42,27 @@ export default function LegView({ leg }: { leg: Leg }) {
   const activeDay =
     mergedDays.find((d) => d.id === activeDayId) ?? mergedDays[0]
 
+  // Scroll to top when user switches days
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }, [activeDayId])
+
   return (
     <div className="min-h-screen bg-[#fafaf8]">
       <HubBanner />
 
       <header className="bg-white border-b border-[#e5e7eb]">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <Link href="/" className="text-[11px] text-[#6b7280] hover:text-[#1a1a1a]">
+        <div className="max-w-4xl mx-auto px-4 py-3">
+          <Link
+            href="/"
+            className="inline-flex items-center text-[12px] text-[#6b7280] hover:text-[#1a1a1a]"
+            style={{ minHeight: 44, padding: '10px 4px 10px 0' }}
+          >
             ← Home
           </Link>
-          <h1 className="text-2xl font-bold text-[#1a1a1a] mt-2">{leg.title}</h1>
+          <h1 className="text-2xl font-bold text-[#1a1a1a]">{leg.title}</h1>
           <p className="text-[11px] text-[#6b7280] mt-0.5">
             {leg.dateRange} · {leg.travelers}
           </p>
@@ -60,8 +71,8 @@ export default function LegView({ leg }: { leg: Leg }) {
         <div className="max-w-4xl mx-auto px-4 flex gap-6 border-t border-[#f3f4f6]">
           <button
             onClick={() => setTab('itinerary')}
-            className="relative py-2.5 text-xs font-medium transition-colors"
-            style={{ color: tab === 'itinerary' ? '#C0392B' : '#6b7280' }}
+            className="relative text-xs font-medium transition-colors inline-flex items-center"
+            style={{ color: tab === 'itinerary' ? '#C0392B' : '#6b7280', minHeight: 44 }}
           >
             Itinerary
             {tab === 'itinerary' && (
@@ -70,8 +81,8 @@ export default function LegView({ leg }: { leg: Leg }) {
           </button>
           <button
             onClick={() => setTab('stays')}
-            className="relative py-2.5 text-xs font-medium transition-colors"
-            style={{ color: tab === 'stays' ? '#C0392B' : '#6b7280' }}
+            className="relative text-xs font-medium transition-colors inline-flex items-center"
+            style={{ color: tab === 'stays' ? '#C0392B' : '#6b7280', minHeight: 44 }}
           >
             Stays
             {tab === 'stays' && (
@@ -97,8 +108,9 @@ export default function LegView({ leg }: { leg: Leg }) {
                       style={{
                         backgroundColor: isActive ? '#C0392B' : '#f3f4f6',
                         color: isActive ? '#ffffff' : '#6b7280',
-                        minHeight: 36,
-                        minWidth: 52,
+                        minHeight: 44,
+                        minWidth: 64,
+                        whiteSpace: 'nowrap',
                       }}
                     >
                       {label}
@@ -123,8 +135,10 @@ export default function LegView({ leg }: { leg: Leg }) {
 
       <button
         onClick={() => setEditMode(!editMode)}
-        className="fixed bottom-5 right-5 shadow-lg rounded-full font-semibold transition-colors"
+        className="fixed shadow-lg rounded-full font-semibold transition-colors"
         style={{
+          right: 16,
+          bottom: 'calc(16px + env(safe-area-inset-bottom))',
           zIndex: 9999,
           backgroundColor: editMode ? '#16a34a' : '#C0392B',
           color: '#ffffff',

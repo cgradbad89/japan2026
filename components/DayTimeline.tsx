@@ -112,24 +112,28 @@ function ActivityEditForm({
   const [saving, setSaving] = useState(false)
 
   const inputCls =
-    'w-full text-[11px] border border-[#e5e7eb] rounded px-2 py-1.5 focus:outline-none focus:border-[#C0392B]'
+    'w-full border border-[#e5e7eb] rounded px-2 py-2 focus:outline-none focus:border-[#C0392B]'
+  const inputStyle: React.CSSProperties = { fontSize: 16 }
 
   return (
     <div className="mt-2 p-2 bg-[#fafaf8] border border-[#e5e7eb] rounded space-y-1.5">
       <input
         className={inputCls}
+        style={inputStyle}
         placeholder="Time"
         value={f.time}
         onChange={(e) => setF({ ...f, time: e.target.value })}
       />
       <input
         className={inputCls}
+        style={inputStyle}
         placeholder="Title"
         value={f.title}
         onChange={(e) => setF({ ...f, title: e.target.value })}
       />
       <select
         className={inputCls}
+        style={inputStyle}
         value={f.type}
         onChange={(e) => setF({ ...f, type: e.target.value as ActivityType })}
       >
@@ -141,6 +145,7 @@ function ActivityEditForm({
       </select>
       <textarea
         className={inputCls}
+        style={inputStyle}
         placeholder="Highlight (optional)"
         rows={2}
         value={f.highlight}
@@ -148,6 +153,7 @@ function ActivityEditForm({
       />
       <textarea
         className={inputCls}
+        style={inputStyle}
         placeholder="Note (optional)"
         rows={2}
         value={f.note}
@@ -155,6 +161,7 @@ function ActivityEditForm({
       />
       <input
         className={inputCls}
+        style={inputStyle}
         placeholder="Address (optional)"
         value={f.address}
         onChange={(e) => setF({ ...f, address: e.target.value })}
@@ -170,13 +177,15 @@ function ActivityEditForm({
               setSaving(false)
             }
           }}
-          className="flex-1 text-[11px] font-semibold text-white bg-[#C0392B] rounded px-2 py-1.5 disabled:opacity-50"
+          className="flex-1 text-[12px] font-semibold text-white bg-[#C0392B] rounded px-2 disabled:opacity-50"
+          style={{ minHeight: 44 }}
         >
           {saving ? 'Saving…' : 'Save'}
         </button>
         <button
           onClick={onCancel}
-          className="flex-1 text-[11px] font-medium text-[#6b7280] bg-white border border-[#e5e7eb] rounded px-2 py-1.5"
+          className="flex-1 text-[12px] font-medium text-[#6b7280] bg-white border border-[#e5e7eb] rounded px-2"
+          style={{ minHeight: 44 }}
         >
           Cancel
         </button>
@@ -197,28 +206,32 @@ function AltEditForm({
   const [f, setF] = useState<AltFormFields>({ name: '', note: '', address: '' })
   const [saving, setSaving] = useState(false)
   const inputCls =
-    'w-full text-[10px] border border-[#e5e7eb] rounded px-1.5 py-1 focus:outline-none focus:border-[#B8860B]'
+    'w-full border border-[#e5e7eb] rounded px-2 py-2 focus:outline-none focus:border-[#B8860B]'
+  const inputStyle: React.CSSProperties = { fontSize: 16 }
   return (
-    <div className="mt-1 p-1.5 bg-white border border-[#B8860B] rounded space-y-1">
+    <div className="mt-1 p-2 bg-white border border-[#B8860B] rounded space-y-1.5">
       <input
         className={inputCls}
+        style={inputStyle}
         placeholder="Name (required)"
         value={f.name}
         onChange={(e) => setF({ ...f, name: e.target.value })}
       />
       <input
         className={inputCls}
+        style={inputStyle}
         placeholder="Note (optional)"
         value={f.note}
         onChange={(e) => setF({ ...f, note: e.target.value })}
       />
       <input
         className={inputCls}
+        style={inputStyle}
         placeholder="Address (optional)"
         value={f.address}
         onChange={(e) => setF({ ...f, address: e.target.value })}
       />
-      <div className="flex gap-1 pt-0.5">
+      <div className="flex gap-2 pt-1">
         <button
           disabled={saving || !f.name.trim()}
           onClick={async () => {
@@ -229,13 +242,15 @@ function AltEditForm({
               setSaving(false)
             }
           }}
-          className="flex-1 text-[10px] font-semibold text-white bg-[#B8860B] rounded px-1.5 py-1 disabled:opacity-50"
+          className="flex-1 text-[12px] font-semibold text-white bg-[#B8860B] rounded px-2 disabled:opacity-50"
+          style={{ minHeight: 44 }}
         >
           {saving ? 'Saving…' : 'Save'}
         </button>
         <button
           onClick={onCancel}
-          className="flex-1 text-[10px] font-medium text-[#6b7280] bg-white border border-[#e5e7eb] rounded px-1.5 py-1"
+          className="flex-1 text-[12px] font-medium text-[#6b7280] bg-white border border-[#e5e7eb] rounded px-2"
+          style={{ minHeight: 44 }}
         >
           Cancel
         </button>
@@ -305,18 +320,18 @@ function ActivityCard({
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-start gap-1.5 flex-1 min-w-0">
-          <span className="text-[11px] leading-none mt-[1px]">{typeEmoji[activity.type]}</span>
+          <span className="text-[12px] leading-none mt-[1px]">{typeEmoji[activity.type]}</span>
           <div className="min-w-0 flex-1">
-            <h3 className="font-bold text-[11px] leading-snug text-[#1a1a1a]">
+            <h3 className="font-bold text-[12px] leading-snug text-[#1a1a1a]">
               {displayTitle}
               {activity.isTBD && (
-                <span className="ml-1.5 inline-block px-1 py-[1px] text-[8px] font-semibold rounded bg-yellow-200 text-yellow-900 align-middle">
+                <span className="ml-1.5 inline-block px-1 py-[1px] text-[9px] font-semibold rounded bg-yellow-200 text-yellow-900 align-middle">
                   TBD
                 </span>
               )}
             </h3>
             {selectedAlt && (
-              <p className="text-[9px] text-[#9ca3af] line-through mt-[1px]">
+              <p className="text-[10px] text-[#9ca3af] line-through mt-[1px]">
                 {activity.title}
               </p>
             )}
@@ -325,7 +340,8 @@ function ActivityCard({
         {editMode ? (
           <button
             onClick={() => setEditing(!editing)}
-            className="flex-shrink-0 w-[20px] h-[20px] rounded-full flex items-center justify-center text-[11px] text-[#C0392B] hover:bg-[#fff8f8] border border-[#fde8e8]"
+            className="flex-shrink-0 rounded-full flex items-center justify-center text-[14px] text-[#C0392B] hover:bg-[#fff8f8]"
+            style={{ width: 44, height: 44, marginTop: -8, marginRight: -8 }}
             aria-label="edit"
           >
             ✎
@@ -335,10 +351,10 @@ function ActivityCard({
             onClick={onToggleCheck}
             className="flex-shrink-0 rounded-full flex items-center justify-center"
             style={{
-              width: 28,
-              height: 28,
-              marginTop: -6,
-              marginRight: -6,
+              width: 44,
+              height: 44,
+              marginTop: -14,
+              marginRight: -14,
               border: 'none',
               background: 'transparent',
             }}
@@ -379,12 +395,13 @@ function ActivityCard({
       )}
 
       {activity.address && (
-        <p className="text-[9px] mt-1 leading-snug">
+        <p className="text-[10px] mt-1 leading-snug">
           <a
             href={googleMapsUrl(activity.address)}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 text-[#6b7280] underline decoration-dotted underline-offset-2 hover:text-[#C0392B]"
+            style={{ minHeight: 32, padding: '4px 0' }}
           >
             📍 {activity.address}
           </a>
@@ -402,7 +419,7 @@ function ActivityCard({
 
       {activity.note && (
         <div
-          className="mt-1.5 px-2 py-1 text-[9px] text-[#6b7280] leading-snug"
+          className="mt-1.5 px-2 py-1 text-[10px] text-[#6b7280] leading-snug"
           style={{ borderLeft: '2px solid #d1d5db', backgroundColor: '#f9fafb' }}
         >
           💡 {activity.note}
@@ -413,7 +430,8 @@ function ActivityCard({
         <div className="mt-2">
           <button
             onClick={() => setAltsOpen(!altsOpen)}
-            className="text-[10px] font-medium text-[#B8860B] hover:text-[#8a6400]"
+            className="text-[11px] font-medium text-[#B8860B] hover:text-[#8a6400] inline-flex items-center"
+            style={{ minHeight: 44, padding: '10px 0' }}
           >
             {activity.alternatives!.length} alternatives · swap {altsOpen ? '▴' : '▾'}
           </button>
@@ -426,29 +444,30 @@ function ActivityCard({
                   <button
                     key="__original__"
                     onClick={() => onSelectAlt(activity.id)}
-                    className="w-full text-left flex items-start gap-1.5 p-1.5 rounded hover:bg-white transition-colors"
+                    className="w-full text-left flex items-start gap-2 p-2 rounded hover:bg-white transition-colors"
                     style={{
+                      minHeight: 44,
                       backgroundColor: originalSel ? '#ffffff' : 'transparent',
                       border: originalSel ? '1px solid #B8860B' : '1px solid transparent',
                     }}
                   >
                     <span
-                      className="flex-shrink-0 mt-[2px] w-[10px] h-[10px] rounded-full border"
+                      className="flex-shrink-0 mt-[3px] w-[12px] h-[12px] rounded-full border"
                       style={{
                         borderColor: '#B8860B',
                         backgroundColor: originalSel ? '#B8860B' : '#ffffff',
                       }}
                     />
                     <span className="flex-1 min-w-0">
-                      <span className="block text-[10px] font-medium text-[#1a1a1a]">
+                      <span className="block text-[11px] font-medium text-[#1a1a1a]">
                         {activity.title}
-                        <span className="ml-1 text-[9px] font-normal text-[#9ca3af]">
+                        <span className="ml-1 text-[10px] font-normal text-[#9ca3af]">
                           (original)
                         </span>
                       </span>
                       {activity.address && (
                         <span
-                          className="block text-[9px] text-[#6b7280] mt-[1px] underline decoration-dotted underline-offset-2 hover:text-[#C0392B] cursor-pointer"
+                          className="block text-[10px] text-[#6b7280] mt-[1px] underline decoration-dotted underline-offset-2 hover:text-[#C0392B] cursor-pointer"
                           onClick={(e) => { e.stopPropagation(); window.open(googleMapsUrl(activity.address!), '_blank', 'noopener,noreferrer') }}
                         >
                           📍 {activity.address}
@@ -464,27 +483,28 @@ function ActivityCard({
                   <button
                     key={alt.id}
                     onClick={() => onSelectAlt(alt.id)}
-                    className="w-full text-left flex items-start gap-1.5 p-1.5 rounded hover:bg-white transition-colors"
+                    className="w-full text-left flex items-start gap-2 p-2 rounded hover:bg-white transition-colors"
                     style={{
+                      minHeight: 44,
                       backgroundColor: isSel ? '#ffffff' : 'transparent',
                       border: isSel ? '1px solid #B8860B' : '1px solid transparent',
                     }}
                   >
                     <span
-                      className="flex-shrink-0 mt-[2px] w-[10px] h-[10px] rounded-full border"
+                      className="flex-shrink-0 mt-[3px] w-[12px] h-[12px] rounded-full border"
                       style={{
                         borderColor: '#B8860B',
                         backgroundColor: isSel ? '#B8860B' : '#ffffff',
                       }}
                     />
                     <span className="flex-1 min-w-0">
-                      <span className="block text-[10px] font-medium text-[#1a1a1a]">{alt.name}</span>
+                      <span className="block text-[11px] font-medium text-[#1a1a1a]">{alt.name}</span>
                       {alt.note && (
-                        <span className="block text-[9px] text-[#6b7280] mt-[1px]">{alt.note}</span>
+                        <span className="block text-[10px] text-[#6b7280] mt-[1px]">{alt.note}</span>
                       )}
                       {alt.address && (
                         <span
-                          className="block text-[9px] text-[#6b7280] mt-[1px] underline decoration-dotted underline-offset-2 hover:text-[#C0392B] cursor-pointer"
+                          className="block text-[10px] text-[#6b7280] mt-[1px] underline decoration-dotted underline-offset-2 hover:text-[#C0392B] cursor-pointer"
                           onClick={(e) => { e.stopPropagation(); window.open(googleMapsUrl(alt.address!), '_blank', 'noopener,noreferrer') }}
                         >
                           📍 {alt.address}
@@ -513,7 +533,8 @@ function ActivityCard({
                   ) : (
                     <button
                       onClick={() => setAddingAlt(true)}
-                      className="w-full text-left text-[10px] text-[#B8860B] hover:text-[#8a6400] p-1.5 font-medium"
+                      className="w-full text-left text-[11px] text-[#B8860B] hover:text-[#8a6400] p-2 font-medium"
+                      style={{ minHeight: 44 }}
                     >
                       + Add alternative
                     </button>
@@ -544,7 +565,8 @@ function ActivityCard({
           ) : (
             <button
               onClick={() => setAddingAlt(true)}
-              className="text-[10px] font-medium text-[#B8860B] hover:text-[#8a6400]"
+              className="text-[11px] font-medium text-[#B8860B] hover:text-[#8a6400] inline-flex items-center"
+              style={{ minHeight: 44, padding: '10px 0' }}
             >
               + Add alternative
             </button>
@@ -565,24 +587,27 @@ function ActivityCard({
       )}
 
       {editMode && (
-        <div className="mt-2 pt-2 border-t border-[#f3f4f6] flex items-center gap-2 text-[10px]">
+        <div className="mt-2 pt-2 border-t border-[#f3f4f6] flex items-center gap-1 text-[11px]">
           <button
             disabled={!canMoveUp}
             onClick={onMoveUp}
-            className="text-[#6b7280] hover:text-[#1a1a1a] disabled:opacity-30"
+            className="text-[#6b7280] hover:text-[#1a1a1a] disabled:opacity-30 rounded"
+            style={{ minHeight: 44, minWidth: 44, padding: '0 8px' }}
           >
             ⬆ Up
           </button>
           <button
             disabled={!canMoveDown}
             onClick={onMoveDown}
-            className="text-[#6b7280] hover:text-[#1a1a1a] disabled:opacity-30"
+            className="text-[#6b7280] hover:text-[#1a1a1a] disabled:opacity-30 rounded"
+            style={{ minHeight: 44, minWidth: 44, padding: '0 8px' }}
           >
             ⬇ Down
           </button>
           <button
             onClick={onRemove}
-            className="ml-auto text-[#C0392B] hover:text-[#8b1f15] font-medium"
+            className="ml-auto text-[#C0392B] hover:text-[#8b1f15] font-medium rounded"
+            style={{ minHeight: 44, padding: '0 8px' }}
           >
             ✕ Remove
           </button>
@@ -617,7 +642,7 @@ function IdeasSection({
       >
         💡 Ideas for this day
       </h3>
-      <p className="text-[9px] text-[#9ca3af] italic mt-[2px] mb-2">
+      <p className="text-[10px] text-[#9ca3af] italic mt-[2px] mb-2">
         Not in the plan — optional additions
       </p>
 
@@ -630,18 +655,23 @@ function IdeasSection({
               background: '#fafaf8',
               border: '0.5px solid #e5e7eb',
               borderLeft: '2px solid #d1d5db',
-              padding: '8px 10px',
+              padding: '10px 12px',
+              minHeight: 44,
             }}
           >
-            <span className="text-[12px] leading-none mt-[1px]">💡</span>
-            <span className="flex-1 text-[10px] italic text-[#6b7280] leading-snug">
+            <span className="text-[14px] leading-none mt-[2px]">💡</span>
+            <span
+              className="flex-1 italic text-[#6b7280]"
+              style={{ fontSize: 11, lineHeight: 1.4 }}
+            >
               {idea}
             </span>
             {editMode && (
               <button
                 onClick={() => onRemove(i)}
-                className="flex-shrink-0 text-[11px] text-[#9ca3af] hover:text-[#C0392B] leading-none"
+                className="flex-shrink-0 text-[#9ca3af] hover:text-[#C0392B] leading-none rounded-full"
                 aria-label="remove idea"
+                style={{ minWidth: 44, minHeight: 44, fontSize: 14, marginTop: -6, marginRight: -6 }}
               >
                 ✕
               </button>
@@ -695,8 +725,8 @@ function IdeasSection({
                       setSaving(false)
                     }
                   }}
-                  className="flex-1 text-[11px] font-semibold text-white rounded px-2 py-2 disabled:opacity-50"
-                  style={{ background: '#6b7280' }}
+                  className="flex-1 text-[12px] font-semibold text-white rounded px-2 disabled:opacity-50"
+                  style={{ background: '#6b7280', minHeight: 44 }}
                 >
                   {saving ? 'Saving…' : 'Save'}
                 </button>
@@ -705,7 +735,8 @@ function IdeasSection({
                     setAdding(false)
                     setDraft('')
                   }}
-                  className="flex-1 text-[11px] font-medium text-[#6b7280] bg-white border border-[#e5e7eb] rounded px-2 py-2"
+                  className="flex-1 text-[12px] font-medium text-[#6b7280] bg-white border border-[#e5e7eb] rounded px-2"
+                  style={{ minHeight: 44 }}
                 >
                   Cancel
                 </button>
@@ -714,8 +745,8 @@ function IdeasSection({
           ) : (
             <button
               onClick={() => setAdding(true)}
-              className="w-full border-2 border-dashed text-[#6b7280] rounded-lg py-3 text-[11px] font-semibold hover:bg-[#fafaf8] transition-colors"
-              style={{ borderColor: '#6b7280' }}
+              className="w-full border-2 border-dashed text-[#6b7280] rounded-lg text-[12px] font-semibold hover:bg-[#fafaf8] transition-colors"
+              style={{ borderColor: '#6b7280', minHeight: 48 }}
             >
               + Add idea
             </button>
@@ -853,18 +884,22 @@ export default function DayTimeline({
               </span>
             )}
           </div>
-          <h2 className="text-base font-semibold text-[#1a1a1a] mt-1">{day.title}</h2>
+          <h2 className="font-semibold text-[#1a1a1a] mt-1" style={{ fontSize: 16 }}>
+            {day.title}
+          </h2>
           <p className="text-[11px] text-[#6b7280] mt-[2px]">
             {day.dayLabel} · {day.travelers}
           </p>
         </div>
         <button
           onClick={handleAskClaude}
-          className="flex-shrink-0 text-[11px] px-2.5 py-1.5 rounded-md transition-colors font-medium"
+          className="flex-shrink-0 text-[12px] rounded-md transition-colors font-medium inline-flex items-center"
           style={{
             border: '1px solid #C0392B',
             color: aiOpen ? '#ffffff' : '#C0392B',
             backgroundColor: aiOpen ? '#C0392B' : 'transparent',
+            minHeight: 44,
+            padding: '0 12px',
           }}
         >
           {aiOpen ? '✦ Close' : '✦ Ask Claude'}
@@ -889,8 +924,8 @@ export default function DayTimeline({
       <div className="flex gap-5 border-b border-[#f3f4f6] mb-4">
         <button
           onClick={() => setTab('timeline')}
-          className="relative py-2 text-[11px] font-semibold transition-colors"
-          style={{ color: tab === 'timeline' ? '#C0392B' : '#6b7280' }}
+          className="relative text-[12px] font-semibold transition-colors inline-flex items-center"
+          style={{ minHeight: 44, color: tab === 'timeline' ? '#C0392B' : '#6b7280' }}
         >
           Timeline
           {tab === 'timeline' && (
@@ -899,8 +934,8 @@ export default function DayTimeline({
         </button>
         <button
           onClick={() => setTab('map')}
-          className="relative py-2 text-[11px] font-semibold transition-colors"
-          style={{ color: tab === 'map' ? '#C0392B' : '#6b7280' }}
+          className="relative text-[12px] font-semibold transition-colors inline-flex items-center"
+          style={{ minHeight: 44, color: tab === 'map' ? '#C0392B' : '#6b7280' }}
         >
           Map
           {tab === 'map' && (
@@ -928,7 +963,7 @@ export default function DayTimeline({
           const isLast = idx === day.activities.length - 1
           return (
             <div key={act.id} className="flex gap-2 items-stretch">
-              <div className="flex-shrink-0 w-10 pt-2 text-[9px] text-[#9ca3af] leading-tight">
+              <div className="flex-shrink-0 w-10 pt-2 text-[10px] text-[#9ca3af] leading-tight">
                 {act.time || ''}
               </div>
 
@@ -978,7 +1013,8 @@ export default function DayTimeline({
           ) : (
             <button
               onClick={() => setShowAddForm(true)}
-              className="w-full border-2 border-dashed border-[#C0392B] text-[#C0392B] rounded-lg py-3 text-[11px] font-semibold hover:bg-[#fff8f8] transition-colors"
+              className="w-full border-2 border-dashed border-[#C0392B] text-[#C0392B] rounded-lg text-[12px] font-semibold hover:bg-[#fff8f8] transition-colors"
+              style={{ minHeight: 48 }}
             >
               + Add activity to {day.title}
             </button>

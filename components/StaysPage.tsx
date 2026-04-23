@@ -92,18 +92,21 @@ function StayEditForm({
   const [f, setF] = useState<StayFormFields>(initial)
   const [saving, setSaving] = useState(false)
   const inputCls =
-    'w-full text-[11px] border border-[#e5e7eb] rounded px-2 py-1.5 focus:outline-none focus:border-[#C0392B]'
+    'w-full border border-[#e5e7eb] rounded px-2 py-2 focus:outline-none focus:border-[#C0392B]'
+  const inputStyle: React.CSSProperties = { fontSize: 16 }
 
   return (
     <div className="mt-2 p-2 bg-[#fafaf8] border border-[#e5e7eb] rounded space-y-1.5">
       <input
         className={inputCls}
+        style={inputStyle}
         placeholder="Property name"
         value={f.name}
         onChange={(e) => setF({ ...f, name: e.target.value })}
       />
       <select
         className={inputCls}
+        style={inputStyle}
         value={f.type}
         onChange={(e) => setF({ ...f, type: e.target.value as StayType })}
       >
@@ -116,12 +119,14 @@ function StayEditForm({
       <div className="flex gap-1.5">
         <input
           className={inputCls}
+          style={inputStyle}
           placeholder="Check-in"
           value={f.checkIn}
           onChange={(e) => setF({ ...f, checkIn: e.target.value })}
         />
         <input
           className={inputCls}
+          style={inputStyle}
           placeholder="Check-out"
           value={f.checkOut}
           onChange={(e) => setF({ ...f, checkOut: e.target.value })}
@@ -129,6 +134,7 @@ function StayEditForm({
       </div>
       <input
         className={inputCls}
+        style={inputStyle}
         placeholder="Nights"
         type="number"
         value={f.nights}
@@ -136,18 +142,21 @@ function StayEditForm({
       />
       <input
         className={inputCls}
+        style={inputStyle}
         placeholder="Address"
         value={f.address}
         onChange={(e) => setF({ ...f, address: e.target.value })}
       />
       <input
         className={inputCls}
+        style={inputStyle}
         placeholder="Booking URL"
         value={f.bookingUrl}
         onChange={(e) => setF({ ...f, bookingUrl: e.target.value })}
       />
       <textarea
         className={inputCls}
+        style={inputStyle}
         placeholder="Notes"
         rows={2}
         value={f.notes}
@@ -164,13 +173,15 @@ function StayEditForm({
               setSaving(false)
             }
           }}
-          className="flex-1 text-[11px] font-semibold text-white bg-[#C0392B] rounded px-2 py-1.5 disabled:opacity-50"
+          className="flex-1 text-[12px] font-semibold text-white bg-[#C0392B] rounded px-2 disabled:opacity-50"
+          style={{ minHeight: 44 }}
         >
           {saving ? 'Saving…' : 'Save'}
         </button>
         <button
           onClick={onCancel}
-          className="flex-1 text-[11px] font-medium text-[#6b7280] bg-white border border-[#e5e7eb] rounded px-2 py-1.5"
+          className="flex-1 text-[12px] font-medium text-[#6b7280] bg-white border border-[#e5e7eb] rounded px-2"
+          style={{ minHeight: 44 }}
         >
           Cancel
         </button>
@@ -222,7 +233,8 @@ function StayCard({
           {editMode && (
             <button
               onClick={() => setEditing(!editing)}
-              className="flex-shrink-0 w-[22px] h-[22px] rounded-full flex items-center justify-center text-[12px] text-[#C0392B] hover:bg-[#fff8f8] border border-[#fde8e8]"
+              className="flex-shrink-0 rounded-full flex items-center justify-center text-[14px] text-[#C0392B] hover:bg-[#fff8f8]"
+              style={{ width: 44, height: 44, marginTop: -8, marginRight: -8 }}
               aria-label="edit stay"
             >
               ✎
@@ -242,14 +254,16 @@ function StayCard({
           </span>
         </div>
 
-        <p className="text-[10px] mb-2">
+        <p className="text-[11px] mb-2">
           <a
             href={googleMapsUrl(stay.address)}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-[#6b7280] underline decoration-dotted underline-offset-2 hover:text-[#C0392B]"
+            className="inline-flex items-start gap-1 text-[#6b7280] underline decoration-dotted underline-offset-2 hover:text-[#C0392B]"
+            style={{ minHeight: 44, padding: '10px 0' }}
           >
-            📍 {stay.address}
+            <span>📍</span>
+            <span className="flex-1">{stay.address}</span>
           </a>
         </p>
 
@@ -259,12 +273,15 @@ function StayCard({
               href={stay.bookingUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[10px] text-green-700 hover:underline font-medium"
+              className="text-[11px] text-green-700 hover:underline font-medium inline-flex items-center gap-1"
+              style={{ minHeight: 44, padding: '10px 0' }}
             >
               🔗 View booking
             </a>
           ) : (
-            <span className="text-[10px] text-[#9ca3af] italic">Add booking link</span>
+            <span className="text-[11px] text-[#9ca3af] italic block" style={{ padding: '10px 0' }}>
+              Add booking link
+            </span>
           )}
         </div>
 
@@ -292,7 +309,8 @@ function StayCard({
           <div className="mt-2 pt-2 border-t border-[#f3f4f6] flex items-center justify-end">
             <button
               onClick={onRemove}
-              className="text-[10px] text-[#C0392B] hover:text-[#8b1f15] font-medium"
+              className="text-[12px] text-[#C0392B] hover:text-[#8b1f15] font-medium rounded"
+              style={{ minHeight: 44, padding: '0 12px' }}
             >
               ✕ Remove
             </button>
@@ -349,8 +367,8 @@ export default function StaysPage({
   }
 
   return (
-    <div className="px-4 py-4">
-      <div className="flex gap-2 mb-4 overflow-x-auto">
+    <div className="px-4 py-4" style={{ overscrollBehavior: 'contain' }}>
+      <div className="flex gap-2 mb-4 overflow-x-auto no-scrollbar">
         <div className="flex-shrink-0 bg-white border border-[#e5e7eb] rounded-full px-3 py-1.5 text-[10px]">
           <span className="font-semibold text-[#1a1a1a]">{totalProperties}</span>
           <span className="text-[#6b7280] ml-1">properties</span>
@@ -391,7 +409,8 @@ export default function StaysPage({
           ) : (
             <button
               onClick={() => setShowAdd(true)}
-              className="w-full border-2 border-dashed border-[#C0392B] text-[#C0392B] rounded-lg py-3 text-[11px] font-semibold hover:bg-[#fff8f8] transition-colors"
+              className="w-full border-2 border-dashed border-[#C0392B] text-[#C0392B] rounded-lg text-[12px] font-semibold hover:bg-[#fff8f8] transition-colors"
+              style={{ minHeight: 48 }}
             >
               + Add accommodation
             </button>

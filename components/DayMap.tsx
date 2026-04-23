@@ -65,18 +65,18 @@ const typeLabel: Record<ActivityType, string> = {
 
 function makeNumberedIcon(num: number, color: string, checked: boolean) {
   const check = checked
-    ? `<div style="position:absolute;top:-3px;right:-3px;width:14px;height:14px;border-radius:50%;background:#16a34a;display:flex;align-items:center;justify-content:center;border:1.5px solid white;">
-         <svg viewBox="0 0 12 12" width="8" height="8" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6l2.5 2.5L10 3"/></svg>
+    ? `<div style="position:absolute;top:-3px;right:-3px;width:15px;height:15px;border-radius:50%;background:#16a34a;display:flex;align-items:center;justify-content:center;border:1.5px solid white;">
+         <svg viewBox="0 0 12 12" width="9" height="9" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6l2.5 2.5L10 3"/></svg>
        </div>`
     : ''
   return L.divIcon({
-    html: `<div style="position:relative;width:32px;height:32px;">
-      <div style="width:32px;height:32px;border-radius:50%;background:${color};border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:13px;opacity:${checked ? 0.7 : 1};">${num}</div>
+    html: `<div style="position:relative;width:36px;height:36px;">
+      <div style="width:36px;height:36px;border-radius:50%;background:${color};border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:14px;opacity:${checked ? 0.7 : 1};">${num}</div>
       ${check}
     </div>`,
     className: 'leaflet-pin-icon',
-    iconSize: [32, 32],
-    iconAnchor: [16, 16],
+    iconSize: [36, 36],
+    iconAnchor: [18, 18],
   })
 }
 
@@ -91,10 +91,10 @@ function makeAltIcon() {
 
 function makeAccommodationIcon() {
   return L.divIcon({
-    html: `<div style="width:34px;height:34px;border-radius:50%;background:#7c3aed;border:2px solid white;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,0.3);">🏨</div>`,
+    html: `<div style="width:38px;height:38px;border-radius:50%;background:#7c3aed;border:2px solid white;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,0.3);">🏨</div>`,
     className: 'leaflet-pin-icon',
-    iconSize: [34, 34],
-    iconAnchor: [17, 17],
+    iconSize: [38, 38],
+    iconAnchor: [19, 19],
   })
 }
 
@@ -176,7 +176,7 @@ export default function DayMap({
     return (
       <div
         className="flex items-center justify-center text-[11px] text-[#9ca3af]"
-        style={{ height: 'calc(100vh - 280px)', minHeight: 400 }}
+        style={{ height: 'calc(100dvh - 220px)', minHeight: 400 }}
       >
         No map data for this day
       </div>
@@ -235,7 +235,7 @@ export default function DayMap({
         {polylinePositions.length > 1 && (
           <Polyline
             positions={polylinePositions}
-            pathOptions={{ color: '#C0392B', weight: 2, dashArray: '6 4', opacity: 0.7 }}
+            pathOptions={{ color: '#C0392B', weight: 3, dashArray: '6 4', opacity: 0.7 }}
           />
         )}
 
@@ -315,8 +315,12 @@ export default function DayMap({
           }}
         >
           <div
-            className="flex gap-1.5 overflow-x-auto"
-            style={{ scrollbarWidth: 'none', pointerEvents: 'auto' } as React.CSSProperties}
+            className="flex gap-1.5 overflow-x-auto no-scrollbar"
+            style={{
+              pointerEvents: 'auto',
+              WebkitOverflowScrolling: 'touch',
+              overscrollBehaviorX: 'contain',
+            } as React.CSSProperties}
           >
             {dayAccommodations.map((acc) => {
               const syntheticActivity: Activity = {
@@ -331,11 +335,11 @@ export default function DayMap({
                 <button
                   key={acc.id}
                   onClick={() => setSheet({ kind: 'activity', activity: syntheticActivity, order: 0 })}
-                  className="flex-shrink-0 flex items-center gap-1 px-2 py-1 rounded-full text-white text-[10px] font-bold whitespace-nowrap"
-                  style={{ background: '#7c3aed', boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }}
+                  className="flex-shrink-0 flex items-center gap-1 px-3 rounded-full text-white text-[11px] font-bold whitespace-nowrap"
+                  style={{ background: '#7c3aed', boxShadow: '0 1px 3px rgba(0,0,0,0.3)', minHeight: 36 }}
                 >
                   <span>🏨</span>
-                  <span className="text-[9px] font-normal opacity-90 max-w-[70px] truncate">
+                  <span className="text-[10px] font-normal opacity-90 max-w-[80px] truncate">
                     {acc.name}
                   </span>
                 </button>
@@ -355,11 +359,11 @@ export default function DayMap({
                       order: isAccom ? 0 : routeIdx + 1,
                     })
                   }
-                  className="flex-shrink-0 flex items-center gap-1 px-2 py-1 rounded-full text-white text-[10px] font-bold whitespace-nowrap"
-                  style={{ background: chipColor, boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }}
+                  className="flex-shrink-0 flex items-center gap-1 px-3 rounded-full text-white text-[11px] font-bold whitespace-nowrap"
+                  style={{ background: chipColor, boxShadow: '0 1px 3px rgba(0,0,0,0.3)', minHeight: 36 }}
                 >
                   <span>{isAccom ? '🏨' : routeIdx + 1}</span>
-                  <span className="text-[9px] font-normal opacity-90 max-w-[70px] truncate">
+                  <span className="text-[10px] font-normal opacity-90 max-w-[80px] truncate">
                     {act.title}
                   </span>
                 </button>

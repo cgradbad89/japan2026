@@ -19,14 +19,17 @@ function diff(targetMs: number) {
 
 function CountdownCard({ value, label }: { value: number; label: string }) {
   return (
-    <div className="bg-white rounded-lg border border-[#e5e7eb] px-3 py-4 flex flex-col items-center">
+    <div className="bg-white rounded-lg border border-[#e5e7eb] py-3 sm:py-4 flex flex-col items-center" style={{ paddingLeft: 8, paddingRight: 8 }}>
       <span
         className="font-bold text-[#C0392B] tabular-nums leading-none"
-        style={{ fontSize: 'clamp(28px, 7vw, 36px)' }}
+        style={{ fontSize: 'clamp(22px, 6vw, 36px)' }}
       >
         {value.toString().padStart(2, '0')}
       </span>
-      <span className="text-[11px] text-[#6b7280] mt-2 uppercase tracking-wider">
+      <span
+        className="text-[#6b7280] mt-2 uppercase tracking-wider"
+        style={{ fontSize: 'clamp(9px, 2.5vw, 11px)' }}
+      >
         {label}
       </span>
     </div>

@@ -175,7 +175,13 @@ export default function AIDrawer({
         <div
           ref={threadRef}
           className="flex-1 overflow-y-auto px-4 py-2"
-          style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 8,
+            overscrollBehavior: 'contain',
+            WebkitOverflowScrolling: 'touch',
+          }}
         >
           {messages.map((m, i) => {
             if (m.role === 'user') {
@@ -248,6 +254,15 @@ export default function AIDrawer({
                 e.preventDefault()
                 send()
               }
+            }}
+            onFocus={() => {
+              // When iOS keyboard opens, scroll the thread so the latest
+              // message is visible above the keyboard.
+              setTimeout(() => {
+                if (threadRef.current) {
+                  threadRef.current.scrollTop = threadRef.current.scrollHeight
+                }
+              }, 300)
             }}
             placeholder={`Ask about Day ${day.dayNumber}...`}
             className="flex-1 px-4 rounded-full border border-[#e5e7eb] focus:outline-none focus:border-[#C0392B]"
