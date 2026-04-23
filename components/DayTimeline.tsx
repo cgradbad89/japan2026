@@ -845,7 +845,7 @@ export default function DayTimeline({
         <div>
           <div className="flex items-baseline gap-2 flex-wrap">
             <span className="text-3xl font-bold text-[#C0392B] leading-none">
-              D{day.dayNumber}
+              Day {day.dayNumber}
             </span>
             {editMode && (
               <span className="inline-block px-1.5 py-[2px] rounded-full text-[9px] font-semibold bg-[#C0392B] text-white">
