@@ -1,6 +1,5 @@
 import {
   collection,
-  deleteDoc,
   doc,
   getDocs,
   onSnapshot,
@@ -68,11 +67,6 @@ export async function setMealSelection(
     { selectedAltId: altId },
     { merge: true }
   )
-}
-
-export async function clearMealSelection(activityId: string): Promise<void> {
-  const ref = doc(db, 'mealSelections', activityId)
-  await deleteDoc(ref)
 }
 
 // ---------- Day overrides ----------

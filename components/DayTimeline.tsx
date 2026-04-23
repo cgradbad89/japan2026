@@ -11,7 +11,6 @@ import type {
 } from '@/data/itinerary'
 import {
   addAlternative,
-  clearMealSelection,
   saveDayActivities,
   saveIdeas,
   setMealSelection,
@@ -775,15 +774,8 @@ export default function DayTimeline({
   }
 
   const handleSelectAlt = async (activityId: string, altId: string) => {
-    if (altId === activityId) {
-      setMealSelections((prev) => {
-        const next = { ...prev }
-        delete next[activityId]
-        return next
-      })
-      await clearMealSelection(activityId)
-      return
-    }
+    // Always write — use activityId as sentinel for "original selected"
+    // to avoid deleteDoc race with onSnapshot.
     setMealSelections((prev) => ({ ...prev, [activityId]: altId }))
     await setMealSelection(activityId, altId)
   }
