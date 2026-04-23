@@ -494,7 +494,7 @@ function ActivityCard({
                   </button>
                 )
               })}
-              {editMode && activity.type === 'meal' && (
+              {editMode && (
                 <>
                   {addingAlt ? (
                     <AltEditForm
@@ -525,7 +525,7 @@ function ActivityCard({
         </div>
       )}
 
-      {editMode && !hasAlternatives && activity.type === 'meal' && (
+      {editMode && !hasAlternatives && (
         <div className="mt-2">
           {addingAlt ? (
             <AltEditForm

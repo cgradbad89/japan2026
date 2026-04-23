@@ -416,6 +416,16 @@ const goldenWeekDays: Day[] = [
         lng: 135.748,
         highlight: "Authentic Shogun residence — 'nightingale floors' chirp to warn of intruders",
         note: 'Bus 50 (15 mins, every 12 mins) or Taxi (7 mins)',
+        alternatives: [
+          {
+            id: 'd5-a1-alt1',
+            name: 'Fushimi Inari Taisha',
+            note: 'Walk through thousands of iconic vermilion torii gates. Allow 2-4 hours.',
+            address: '68 Fukakusa Yabunouchicho, Fushimi Ward, Kyoto',
+            lat: 34.9671,
+            lng: 135.7727,
+          },
+        ],
       },
       {
         id: 'd5-a2',
@@ -504,9 +514,6 @@ const goldenWeekDays: Day[] = [
         note: 'Reservation essential — book in advance',
       },
     ],
-    ideas: [
-      'Alt morning: Fushimi Inari Taisha — walk through thousands of iconic vermilion torii gates (68 Fukakusa Yabunouchicho, Fushimi Ward)',
-    ],
   },
   {
     id: 'day-6',
@@ -527,6 +534,16 @@ const goldenWeekDays: Day[] = [
         lng: 135.6721,
         highlight: 'Towering bamboo groves — arrive early to beat the crowds',
         note: 'JR Sagano Line to Saga-Arashiyama (~15 min) then 10 min walk. Or 30 min taxi.',
+        alternatives: [
+          {
+            id: 'd6-a1-alt1',
+            name: 'Fushimi Inari Taisha',
+            note: 'Walk through thousands of iconic vermilion torii gates. Allow 2-4 hours.',
+            address: '68 Fukakusa Yabunouchicho, Fushimi Ward, Kyoto',
+            lat: 34.9671,
+            lng: 135.7727,
+          },
+        ],
       },
       {
         id: 'd6-a2',
@@ -583,9 +600,6 @@ const goldenWeekDays: Day[] = [
         lat: 34.9858,
         lng: 135.7587,
       },
-    ],
-    ideas: [
-      'Alt morning: Fushimi Inari Taisha — walk through thousands of iconic vermilion torii gates (68 Fukakusa Yabunouchicho, Fushimi Ward)',
     ],
   },
   {

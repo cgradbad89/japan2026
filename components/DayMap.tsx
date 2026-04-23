@@ -516,7 +516,7 @@ function ActivitySheet({
         </div>
       )}
 
-      {activity.type === 'meal' && activity.alternatives && activity.alternatives.length > 0 && (
+      {activity.alternatives && activity.alternatives.length > 0 && (
         <div className="mb-3 bg-[#fafaf8] rounded p-2 border border-[#e5e7eb]">
           <p className="text-[10px] font-semibold text-[#6b7280] mb-1.5">Alternatives</p>
           <div className="space-y-1">
