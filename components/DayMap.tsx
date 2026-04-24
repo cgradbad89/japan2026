@@ -2,10 +2,12 @@
 
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import dynamic from 'next/dynamic'
 import { useEffect, useState } from 'react'
 import { MapContainer, Marker, Polyline, TileLayer, useMap } from 'react-leaflet'
-import type { Accommodation, Activity, ActivityType, Day, MealAlternative } from '@/data/itinerary'
-import { googleMapsUrl } from '@/lib/maps'
+import type { Accommodation, Activity, ActivityType, MealAlternative, Day } from '@/data/itinerary'
+
+const ActivityModal = dynamic(() => import('@/components/ActivityModal'), { ssr: false })
 
 // Fix default Leaflet marker paths under webpack/Next
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -17,7 +19,7 @@ L.Icon.Default.mergeOptions({
 })
 
 const MONTH_MAP: Record<string, number> = {
-  Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11,
+  Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5, Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11,
 }
 
 function parseAccDate(str: string): string {
@@ -45,34 +47,10 @@ const typePinColor: Record<ActivityType, string> = {
   accommodation: '#9ca3af',
 }
 
-const typeEmoji: Record<ActivityType, string> = {
-  transport: '🚅',
-  sightseeing: '🏯',
-  meal: '🍜',
-  accommodation: '🏨',
-  entertainment: '🎭',
-  free: '☕',
-}
-
-const typeLabel: Record<ActivityType, string> = {
-  transport: 'Transport',
-  sightseeing: 'Sightseeing',
-  meal: 'Meal',
-  accommodation: 'Stay',
-  entertainment: 'Entertainment',
-  free: 'Free',
-}
-
-function makeNumberedIcon(num: number, color: string, checked: boolean) {
-  const check = checked
-    ? `<div style="position:absolute;top:-3px;right:-3px;width:15px;height:15px;border-radius:50%;background:#16a34a;display:flex;align-items:center;justify-content:center;border:1.5px solid white;">
-         <svg viewBox="0 0 12 12" width="9" height="9" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6l2.5 2.5L10 3"/></svg>
-       </div>`
-    : ''
+function makeNumberedIcon(num: number, color: string) {
   return L.divIcon({
     html: `<div style="position:relative;width:36px;height:36px;">
-      <div style="width:36px;height:36px;border-radius:50%;background:${color};border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:14px;opacity:${checked ? 0.7 : 1};">${num}</div>
-      ${check}
+      <div style="width:36px;height:36px;border-radius:50%;background:${color};border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:14px;">${num}</div>
     </div>`,
     className: 'leaflet-pin-icon',
     iconSize: [36, 36],
@@ -111,27 +89,25 @@ function FitBounds({ positions }: { positions: [number, number][] }) {
   return null
 }
 
-type Sheet =
-  | { kind: 'activity'; activity: Activity; order: number }
-  | { kind: 'alt'; parent: Activity; alt: MealAlternative }
-  | null
+// Leaflet click events carry .originalEvent (DOM event). Stop the DOM event
+// from bubbling into the map so clicking a marker does NOT pan or zoom.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function stopMapPropagation(e: any) {
+  if (e?.originalEvent) L.DomEvent.stopPropagation(e.originalEvent)
+}
 
 export default function DayMap({
   day,
-  checkoffs,
   mealSelections,
-  onToggleCheckoff,
   onSelectAlt,
   accommodations,
 }: {
   day: Day
-  checkoffs: Record<string, boolean>
   mealSelections: Record<string, string>
-  onToggleCheckoff: (id: string, current: boolean) => void
   onSelectAlt: (activityId: string, altId: string) => void
   accommodations: Accommodation[]
 }) {
-  const [sheet, setSheet] = useState<Sheet>(null)
+  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null)
 
   // Activities that get numbered pins (excludes free and accommodation)
   const numberedPins = day.activities.filter(
@@ -143,10 +119,7 @@ export default function DayMap({
   )
 
   const accommodationActivities = day.activities.filter(
-    (a) =>
-      a.lat !== undefined &&
-      a.lng !== undefined &&
-      a.type === 'accommodation'
+    (a) => a.lat !== undefined && a.lng !== undefined && a.type === 'accommodation'
   )
 
   const altEntries: { parent: Activity; alt: MealAlternative }[] = []
@@ -183,7 +156,6 @@ export default function DayMap({
     )
   }
 
-  // Build polyline: numbered-pin positions, with accommodation coords prepended/appended
   const basePositions: [number, number][] = numberedPins.map((a) => [a.lat!, a.lng!])
   const prependCoords: [number, number][] = []
   const appendCoords: [number, number][] = []
@@ -196,9 +168,12 @@ export default function DayMap({
     } else if (dayStr === checkOutStr) {
       prependCoords.push([coords.lat, coords.lng])
     }
-    // mid-stay: not added to route line
   }
-  const polylinePositions: [number, number][] = [...prependCoords, ...basePositions, ...appendCoords]
+  const polylinePositions: [number, number][] = [
+    ...prependCoords,
+    ...basePositions,
+    ...appendCoords,
+  ]
 
   const allPositions: [number, number][] = [
     ...polylinePositions,
@@ -210,13 +185,23 @@ export default function DayMap({
   const stripActivities = day.activities.filter(
     (a) => a.lat !== undefined && a.lng !== undefined && a.type !== 'free'
   )
-
   const showStrip = stripActivities.length > 0 || dayAccommodations.length > 0
+
+  const openActivityModal = (a: Activity) => setSelectedActivity(a)
+
+  const makeSyntheticAccommodation = (acc: Accommodation): Activity => ({
+    id: acc.id,
+    title: acc.name,
+    type: 'accommodation',
+    address: acc.address,
+    highlight: acc.notes || undefined,
+    note: `${acc.checkIn} → ${acc.checkOut} · ${acc.nights} nights`,
+  })
 
   return (
     <div
       className="relative"
-      style={{ height: 'calc(100vh - 280px)', minHeight: 400 }}
+      style={{ height: 'calc(100dvh - 220px)', minHeight: 400 }}
     >
       <MapContainer
         center={center}
@@ -226,8 +211,8 @@ export default function DayMap({
       >
         <TileLayer
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-          attribution='&copy; OpenStreetMap contributors &copy; CARTO'
-          subdomains='abcd'
+          attribution="&copy; OpenStreetMap contributors &copy; CARTO"
+          subdomains="abcd"
           maxZoom={19}
         />
         <FitBounds positions={allPositions} />
@@ -245,7 +230,13 @@ export default function DayMap({
             position={[alt.lat!, alt.lng!]}
             icon={makeAltIcon()}
             zIndexOffset={-100}
-            eventHandlers={{ click: () => setSheet({ kind: 'alt', parent, alt }) }}
+            eventHandlers={{
+              click: (e) => {
+                stopMapPropagation(e)
+                onSelectAlt(parent.id, alt.id)
+                openActivityModal(parent)
+              },
+            }}
           />
         ))}
 
@@ -256,21 +247,17 @@ export default function DayMap({
             icon={makeAccommodationIcon()}
             zIndexOffset={500}
             eventHandlers={{
-              click: () => setSheet({ kind: 'activity', activity: act, order: 0 }),
+              click: (e) => {
+                stopMapPropagation(e)
+                openActivityModal(act)
+              },
             }}
           />
         ))}
 
         {dayAccommodations.map((acc) => {
           const coords = STAY_COORDS[acc.id]
-          const syntheticActivity: Activity = {
-            id: acc.id,
-            title: acc.name,
-            type: 'accommodation',
-            address: acc.address,
-            highlight: acc.notes || undefined,
-            note: `${acc.checkIn} → ${acc.checkOut} · ${acc.nights} nights`,
-          }
+          const synthetic = makeSyntheticAccommodation(acc)
           return (
             <Marker
               key={acc.id}
@@ -278,23 +265,28 @@ export default function DayMap({
               icon={makeAccommodationIcon()}
               zIndexOffset={500}
               eventHandlers={{
-                click: () => setSheet({ kind: 'activity', activity: syntheticActivity, order: 0 }),
+                click: (e) => {
+                  stopMapPropagation(e)
+                  openActivityModal(synthetic)
+                },
               }}
             />
           )
         })}
 
         {numberedPins.map((act, i) => {
-          const checked = !!checkoffs[act.id]
           const color = typePinColor[act.type]
           return (
             <Marker
               key={act.id}
               position={[act.lat!, act.lng!]}
-              icon={makeNumberedIcon(i + 1, color, checked)}
-              zIndexOffset={checked ? 0 : 1000}
+              icon={makeNumberedIcon(i + 1, color)}
+              zIndexOffset={1000}
               eventHandlers={{
-                click: () => setSheet({ kind: 'activity', activity: act, order: i + 1 }),
+                click: (e) => {
+                  stopMapPropagation(e)
+                  openActivityModal(act)
+                },
               }}
             />
           )
@@ -323,18 +315,11 @@ export default function DayMap({
             } as React.CSSProperties}
           >
             {dayAccommodations.map((acc) => {
-              const syntheticActivity: Activity = {
-                id: acc.id,
-                title: acc.name,
-                type: 'accommodation',
-                address: acc.address,
-                highlight: acc.notes || undefined,
-                note: `${acc.checkIn} → ${acc.checkOut} · ${acc.nights} nights`,
-              }
+              const synthetic = makeSyntheticAccommodation(acc)
               return (
                 <button
                   key={acc.id}
-                  onClick={() => setSheet({ kind: 'activity', activity: syntheticActivity, order: 0 })}
+                  onClick={() => openActivityModal(synthetic)}
                   className="flex-shrink-0 flex items-center gap-1 px-3 rounded-full text-white text-[11px] font-bold whitespace-nowrap"
                   style={{ background: '#7c3aed', boxShadow: '0 1px 3px rgba(0,0,0,0.3)', minHeight: 36 }}
                 >
@@ -352,13 +337,7 @@ export default function DayMap({
               return (
                 <button
                   key={act.id}
-                  onClick={() =>
-                    setSheet({
-                      kind: 'activity',
-                      activity: act,
-                      order: isAccom ? 0 : routeIdx + 1,
-                    })
-                  }
+                  onClick={() => openActivityModal(act)}
                   className="flex-shrink-0 flex items-center gap-1 px-3 rounded-full text-white text-[11px] font-bold whitespace-nowrap"
                   style={{ background: chipColor, boxShadow: '0 1px 3px rgba(0,0,0,0.3)', minHeight: 36 }}
                 >
@@ -373,321 +352,12 @@ export default function DayMap({
         </div>
       )}
 
-      {sheet && (
-        <div
-          onClick={() => setSheet(null)}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 1500,
-            background: 'transparent',
-          }}
-        />
-      )}
-
-      {sheet?.kind === 'activity' && (
-        <ActivitySheet
-          activity={sheet.activity}
-          order={sheet.order}
-          checked={!!checkoffs[sheet.activity.id]}
-          mealSelections={mealSelections}
-          onClose={() => setSheet(null)}
-          onToggleCheckoff={onToggleCheckoff}
-          onSelectAlt={onSelectAlt}
-        />
-      )}
-
-      {sheet?.kind === 'alt' && (
-        <AltSheet
-          parent={sheet.parent}
-          alt={sheet.alt}
-          onClose={() => setSheet(null)}
-          onSelect={() => {
-            onSelectAlt(sheet.parent.id, sheet.alt.id)
-            setSheet(null)
-          }}
-        />
-      )}
-    </div>
-  )
-}
-
-const sheetStyle: React.CSSProperties = {
-  position: 'fixed',
-  bottom: 0,
-  left: 0,
-  right: 0,
-  zIndex: 2000,
-  maxHeight: '70vh',
-  overflowY: 'auto',
-  WebkitOverflowScrolling: 'touch',
-  background: 'white',
-  borderRadius: '16px 16px 0 0',
-  borderTop: '0.5px solid #e5e7eb',
-  padding: 14,
-  paddingBottom: 'calc(14px + env(safe-area-inset-bottom))',
-  boxShadow: '0 -4px 16px rgba(0,0,0,0.08)',
-}
-
-const handleStyle: React.CSSProperties = {
-  width: 36,
-  height: 4,
-  background: '#e5e7eb',
-  borderRadius: 2,
-  touchAction: 'pan-y',
-}
-
-function ActivitySheet({
-  activity,
-  order,
-  checked,
-  mealSelections,
-  onClose,
-  onToggleCheckoff,
-  onSelectAlt,
-}: {
-  activity: Activity
-  order: number
-  checked: boolean
-  mealSelections: Record<string, string>
-  onClose: () => void
-  onToggleCheckoff: (id: string, current: boolean) => void
-  onSelectAlt: (activityId: string, altId: string) => void
-}) {
-  const color = typePinColor[activity.type]
-  const selectedAltId = mealSelections[activity.id]
-  return (
-    <div style={sheetStyle} onClick={(e) => e.stopPropagation()}>
-      <div className="flex justify-center mb-2">
-        <div style={handleStyle} />
-      </div>
-      <button
-        onClick={(e) => {
-          e.stopPropagation()
-          onClose()
-        }}
-        className="absolute top-1 right-1 rounded-full flex items-center justify-center text-[#6b7280] hover:bg-[#f3f4f6]"
-        style={{ width: 44, height: 44, fontSize: 22, cursor: 'pointer' }}
-        aria-label="close"
-      >
-        ×
-      </button>
-
-      <div className="flex items-start gap-2 mb-2 pr-6">
-        <span className="text-base leading-none mt-[2px]">{typeEmoji[activity.type]}</span>
-        <div className="min-w-0">
-          <h3 className="text-sm font-bold text-[#1a1a1a] leading-snug">
-            {activity.type !== 'accommodation' && (
-              <span className="text-[#C0392B] mr-1">#{order}</span>
-            )}
-            {activity.title}
-          </h3>
-          <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-            {activity.time && (
-              <span
-                className="inline-block px-1.5 py-[2px] rounded text-[9px] font-semibold"
-                style={{ backgroundColor: '#fafaf8', color: '#6b7280' }}
-              >
-                {activity.time}
-              </span>
-            )}
-            <span
-              className="inline-block px-1.5 py-[2px] rounded text-[9px] font-semibold"
-              style={{ backgroundColor: `${color}15`, color }}
-            >
-              {typeLabel[activity.type]}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {activity.description && (
-        <p className="text-[11px] text-[#6b7280] mb-2 leading-snug">{activity.description}</p>
-      )}
-
-      {activity.address && (
-        <p className="text-[10px] mb-2 leading-snug">
-          <a
-            href={googleMapsUrl(activity.address)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-[#6b7280] underline decoration-dotted underline-offset-2 hover:text-[#C0392B]"
-          >
-            📍 {activity.address}
-          </a>
-        </p>
-      )}
-
-      {activity.highlight && (
-        <div
-          className="mb-2 px-2 py-1.5 text-[11px] italic text-[#1a1a1a] leading-snug"
-          style={{ borderLeft: '2px solid #fca5a5', backgroundColor: '#fff8f8' }}
-        >
-          {activity.highlight}
-        </div>
-      )}
-
-      {activity.note && (
-        <div
-          className="mb-2 px-2 py-1.5 text-[10px] text-[#6b7280] leading-snug"
-          style={{ borderLeft: '2px solid #d1d5db', backgroundColor: '#f9fafb' }}
-        >
-          💡 {activity.note}
-        </div>
-      )}
-
-      {activity.alternatives && activity.alternatives.length > 0 && (
-        <div className="mb-3 bg-[#fafaf8] rounded p-2 border border-[#e5e7eb]">
-          <p className="text-[10px] font-semibold text-[#6b7280] mb-1.5">Alternatives</p>
-          <div className="space-y-1">
-            {(() => {
-              const originalSel = !selectedAltId || selectedAltId === activity.id
-              return (
-                <button
-                  key="__original__"
-                  onClick={() => onSelectAlt(activity.id, activity.id)}
-                  className="w-full text-left flex items-start gap-1.5 p-1.5 rounded transition-colors"
-                  style={{
-                    backgroundColor: originalSel ? '#ffffff' : 'transparent',
-                    border: originalSel ? '1px solid #B8860B' : '1px solid transparent',
-                  }}
-                >
-                  <span
-                    className="flex-shrink-0 mt-[2px] w-[10px] h-[10px] rounded-full border"
-                    style={{
-                      borderColor: '#B8860B',
-                      backgroundColor: originalSel ? '#B8860B' : '#ffffff',
-                    }}
-                  />
-                  <span className="flex-1 min-w-0">
-                    <span className="block text-[11px] font-medium text-[#1a1a1a]">
-                      {activity.title}
-                      <span className="ml-1 text-[10px] font-normal text-[#9ca3af]">
-                        (original)
-                      </span>
-                    </span>
-                    {activity.address && (
-                      <span
-                        className="block text-[10px] text-[#6b7280] mt-[1px] underline decoration-dotted underline-offset-2 hover:text-[#C0392B] cursor-pointer"
-                        onClick={(e) => { e.stopPropagation(); window.open(googleMapsUrl(activity.address!), '_blank', 'noopener,noreferrer') }}
-                      >
-                        📍 {activity.address}
-                      </span>
-                    )}
-                  </span>
-                </button>
-              )
-            })()}
-            {activity.alternatives.map((alt) => {
-              const isSel = selectedAltId === alt.id
-              return (
-                <button
-                  key={alt.id}
-                  onClick={() => onSelectAlt(activity.id, alt.id)}
-                  className="w-full text-left flex items-start gap-1.5 p-1.5 rounded transition-colors"
-                  style={{
-                    backgroundColor: isSel ? '#ffffff' : 'transparent',
-                    border: isSel ? '1px solid #B8860B' : '1px solid transparent',
-                  }}
-                >
-                  <span
-                    className="flex-shrink-0 mt-[2px] w-[10px] h-[10px] rounded-full border"
-                    style={{
-                      borderColor: '#B8860B',
-                      backgroundColor: isSel ? '#B8860B' : '#ffffff',
-                    }}
-                  />
-                  <span className="flex-1 min-w-0">
-                    <span className="block text-[11px] font-medium text-[#1a1a1a]">{alt.name}</span>
-                    {alt.note && (
-                      <span className="block text-[10px] text-[#6b7280] mt-[1px]">{alt.note}</span>
-                    )}
-                  </span>
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      )}
-
-      {activity.type !== 'accommodation' && (
-        <button
-          onClick={() => onToggleCheckoff(activity.id, checked)}
-          className="w-full rounded-md py-2 text-[12px] font-semibold transition-colors"
-          style={{
-            backgroundColor: checked ? '#16a34a' : '#ffffff',
-            color: checked ? '#ffffff' : '#16a34a',
-            border: '1.5px solid #16a34a',
-          }}
-        >
-          {checked ? 'Done ✓ — tap to undo' : 'Mark as done ✓'}
-        </button>
-      )}
-    </div>
-  )
-}
-
-function AltSheet({
-  alt,
-  onClose,
-  onSelect,
-}: {
-  parent: Activity
-  alt: MealAlternative
-  onClose: () => void
-  onSelect: () => void
-}) {
-  return (
-    <div style={sheetStyle} onClick={(e) => e.stopPropagation()}>
-      <div className="flex justify-center mb-2">
-        <div style={handleStyle} />
-      </div>
-      <button
-        onClick={(e) => {
-          e.stopPropagation()
-          onClose()
-        }}
-        className="absolute top-1 right-1 rounded-full flex items-center justify-center text-[#6b7280] hover:bg-[#f3f4f6]"
-        style={{ width: 44, height: 44, fontSize: 22, cursor: 'pointer' }}
-        aria-label="close"
-      >
-        ×
-      </button>
-
-      <div className="flex items-start gap-2 mb-2 pr-6">
-        <span className="text-base leading-none mt-[2px]">🍜</span>
-        <div className="min-w-0">
-          <h3 className="text-sm font-bold text-[#1a1a1a] leading-snug">{alt.name}</h3>
-          <span
-            className="inline-block mt-1 px-1.5 py-[2px] rounded text-[9px] font-semibold"
-            style={{ backgroundColor: '#B8860B15', color: '#B8860B' }}
-          >
-            Alternative
-          </span>
-        </div>
-      </div>
-
-      {alt.note && <p className="text-[11px] text-[#6b7280] mb-2 leading-snug">{alt.note}</p>}
-      {alt.address && (
-        <p className="text-[10px] mb-3 leading-snug">
-          <a
-            href={googleMapsUrl(alt.address)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-[#6b7280] underline decoration-dotted underline-offset-2 hover:text-[#C0392B]"
-          >
-            📍 {alt.address}
-          </a>
-        </p>
-      )}
-
-      <button
-        onClick={onSelect}
-        className="w-full rounded-md py-2 text-[12px] font-semibold text-white"
-        style={{ backgroundColor: '#B8860B' }}
-      >
-        Set as selected restaurant
-      </button>
+      <ActivityModal
+        activity={selectedActivity}
+        mealSelections={mealSelections}
+        onSelectAlt={onSelectAlt}
+        onClose={() => setSelectedActivity(null)}
+      />
     </div>
   )
 }

@@ -22,6 +22,7 @@ import { googleMapsUrl } from '@/lib/maps'
 
 const DayMap = dynamic(() => import('@/components/DayMap'), { ssr: false })
 const AIDrawer = dynamic(() => import('@/components/AIDrawer'), { ssr: false })
+const ActivityModal = dynamic(() => import('@/components/ActivityModal'), { ssr: false })
 
 const typeColor: Record<ActivityType, string> = {
   sightseeing: '#C0392B',
@@ -262,8 +263,6 @@ function AltEditForm({
 function ActivityCard({
   activity,
   editMode,
-  checked,
-  onToggleCheck,
   selectedAltId,
   onSelectAlt,
   onSaveEdit,
@@ -271,13 +270,12 @@ function ActivityCard({
   onMoveUp,
   onMoveDown,
   onAddAlt,
+  onOpenModal,
   canMoveUp,
   canMoveDown,
 }: {
   activity: Activity
   editMode: boolean
-  checked: boolean
-  onToggleCheck: () => void
   selectedAltId?: string
   onSelectAlt: (altId: string) => void
   onSaveEdit: (next: Activity) => Promise<void>
@@ -285,6 +283,7 @@ function ActivityCard({
   onMoveUp: () => void
   onMoveDown: () => void
   onAddAlt: (alt: MealAlternative) => Promise<void>
+  onOpenModal: () => void
   canMoveUp: boolean
   canMoveDown: boolean
 }) {
@@ -294,10 +293,15 @@ function ActivityCard({
   const [addingAlt, setAddingAlt] = useState(false)
   const hasAlternatives = activity.alternatives && activity.alternatives.length > 0
 
-  const selectedAlt = selectedAltId
-    ? activity.alternatives?.find((a) => a.id === selectedAltId)
-    : undefined
+  const isOriginalSelected = !selectedAltId || selectedAltId === activity.id
+  const selectedAlt = !isOriginalSelected
+    ? activity.alternatives?.find((a) => a.id === selectedAltId) ?? null
+    : null
+
   const displayTitle = selectedAlt?.name ?? activity.title
+  const displayAddress = selectedAlt ? selectedAlt.address : activity.address
+  const displayHighlight = selectedAlt ? selectedAlt.note : activity.highlight
+  const displayNote = selectedAlt ? undefined : activity.note
 
   return (
     <div
@@ -306,7 +310,7 @@ function ActivityCard({
         if (editMode) return
         const t = e.target as HTMLElement
         if (t.closest('button, input, textarea, a')) return
-        onToggleCheck()
+        onOpenModal()
       }}
       style={{
         padding: '10px',
@@ -331,13 +335,20 @@ function ActivityCard({
               )}
             </h3>
             {selectedAlt && (
-              <p className="text-[10px] text-[#9ca3af] line-through mt-[1px]">
-                {activity.title}
-              </p>
+              <span
+                className="inline-block mt-1 px-2 py-[2px] rounded-full italic"
+                style={{
+                  fontSize: 9,
+                  background: '#f3f4f6',
+                  color: '#6b7280',
+                }}
+              >
+                ↩ original: {activity.title}
+              </span>
             )}
           </div>
         </div>
-        {editMode ? (
+        {editMode && (
           <button
             onClick={() => setEditing(!editing)}
             className="flex-shrink-0 rounded-full flex items-center justify-center text-[14px] text-[#C0392B] hover:bg-[#fff8f8]"
@@ -346,83 +357,42 @@ function ActivityCard({
           >
             ✎
           </button>
-        ) : (
-          <button
-            onClick={onToggleCheck}
-            className="flex-shrink-0 rounded-full flex items-center justify-center"
-            style={{
-              width: 44,
-              height: 44,
-              marginTop: -14,
-              marginRight: -14,
-              border: 'none',
-              background: 'transparent',
-            }}
-            aria-label="mark done"
-          >
-            <span
-              className="flex items-center justify-center rounded-full"
-              style={{
-                width: 18,
-                height: 18,
-                borderWidth: 1,
-                borderStyle: 'solid',
-                borderColor: checked ? '#16a34a' : '#d1d5db',
-                backgroundColor: checked ? '#16a34a' : 'transparent',
-              }}
-            >
-            {checked && (
-              <svg
-                viewBox="0 0 12 12"
-                width="9"
-                height="9"
-                fill="none"
-                stroke="white"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M2 6l2.5 2.5L10 3" />
-              </svg>
-            )}
-            </span>
-          </button>
         )}
       </div>
 
-      {activity.description && (
+      {!selectedAlt && activity.description && (
         <p className="text-[10px] text-[#6b7280] mt-1 leading-snug">{activity.description}</p>
       )}
 
-      {activity.address && (
+      {displayAddress && (
         <p className="text-[10px] mt-1 leading-snug">
           <a
-            href={googleMapsUrl(activity.address)}
+            href={googleMapsUrl(displayAddress)}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 text-[#6b7280] underline decoration-dotted underline-offset-2 hover:text-[#C0392B]"
             style={{ minHeight: 32, padding: '4px 0' }}
           >
-            📍 {activity.address}
+            📍 {displayAddress}
           </a>
         </p>
       )}
 
-      {activity.highlight && (
+      {displayHighlight && (
         <div
           className="mt-1.5 px-2 py-1 text-[10px] italic text-[#1a1a1a] leading-snug"
           style={{ borderLeft: '2px solid #fca5a5', backgroundColor: '#fff8f8' }}
         >
-          {activity.highlight}
+          {displayHighlight}
         </div>
       )}
 
-      {activity.note && (
+      {displayNote && (
         <div
           className="mt-1.5 px-2 py-1 text-[10px] text-[#6b7280] leading-snug"
           style={{ borderLeft: '2px solid #d1d5db', backgroundColor: '#f9fafb' }}
         >
-          💡 {activity.note}
+          💡 {displayNote}
         </div>
       )}
 
@@ -771,11 +741,13 @@ export default function DayTimeline({
   const [showAddForm, setShowAddForm] = useState(false)
   const [tab, setTab] = useState<'timeline' | 'map'>('timeline')
   const [aiOpen, setAiOpen] = useState(false)
+  const [modalActivity, setModalActivity] = useState<Activity | null>(null)
 
   useEffect(() => {
-    // reset the inner tab & AI drawer when switching days
+    // reset the inner tab, AI drawer and modal when switching days
     setTab('timeline')
     setAiOpen(false)
+    setModalActivity(null)
   }, [day.id])
 
   useEffect(() => {
@@ -787,22 +759,11 @@ export default function DayTimeline({
     }
   }, [])
 
-  const actionable = day.activities.filter(
-    (a) => a.type !== 'free' && a.type !== 'accommodation'
-  )
-  const totalActs = actionable.length
-  const completedCount = actionable.filter((a) => checkoffs[a.id]).length
-  const pct = totalActs > 0 ? (completedCount / totalActs) * 100 : 0
-
-  const handleToggle = async (id: string) => {
-    const current = !!checkoffs[id]
-    setCheckoffs((prev) => ({ ...prev, [id]: !current }))
-    try {
-      await toggleCheckoff(id, current)
-    } catch {
-      setCheckoffs((prev) => ({ ...prev, [id]: current }))
-    }
-  }
+  // NOTE: Firestore checkoff subscription and state are intentionally kept
+  // in case we reintroduce a checkoff UI. The visual progress bar / check
+  // circles were removed in favor of the activity modal.
+  void checkoffs
+  void toggleCheckoff
 
   const handleSelectAlt = async (activityId: string, altId: string) => {
     // Always write — use activityId as sentinel for "original selected"
@@ -906,22 +867,7 @@ export default function DayTimeline({
         </button>
       </div>
 
-      <div className="mb-3">
-        <div className="flex items-center justify-between text-[10px] text-[#6b7280] mb-1">
-          <span>
-            {completedCount} of {totalActs} activities
-          </span>
-          {totalActs > 0 && <span>{Math.round(pct)}%</span>}
-        </div>
-        <div className="h-[3px] bg-[#fde8e8] rounded-full overflow-hidden">
-          <div
-            className="h-full bg-[#C0392B] transition-all duration-300 ease-out"
-            style={{ width: `${pct}%` }}
-          />
-        </div>
-      </div>
-
-      <div className="flex gap-5 border-b border-[#f3f4f6] mb-4">
+      <div className="flex gap-5 border-b border-[#f3f4f6] mb-4 mt-1">
         <button
           onClick={() => setTab('timeline')}
           className="relative text-[12px] font-semibold transition-colors inline-flex items-center"
@@ -947,9 +893,7 @@ export default function DayTimeline({
       {tab === 'map' && (
         <DayMap
           day={day}
-          checkoffs={checkoffs}
           mealSelections={mealSelections}
-          onToggleCheckoff={handleToggle}
           onSelectAlt={handleSelectAlt}
           accommodations={accommodations}
         />
@@ -979,8 +923,6 @@ export default function DayTimeline({
                 <ActivityCard
                   activity={act}
                   editMode={editMode}
-                  checked={!!checkoffs[act.id]}
-                  onToggleCheck={() => handleToggle(act.id)}
                   selectedAltId={mealSelections[act.id]}
                   onSelectAlt={(altId) => handleSelectAlt(act.id, altId)}
                   onSaveEdit={handleSaveEdit}
@@ -988,6 +930,7 @@ export default function DayTimeline({
                   onMoveUp={() => handleMove(idx, 'up')}
                   onMoveDown={() => handleMove(idx, 'down')}
                   onAddAlt={(alt) => handleAddAlt(act.id, alt)}
+                  onOpenModal={() => setModalActivity(act)}
                   canMoveUp={idx > 0}
                   canMoveDown={idx < day.activities.length - 1}
                 />
@@ -1039,6 +982,13 @@ export default function DayTimeline({
         ideas={day.ideas ?? []}
         mealSelections={mealSelections}
         checkoffs={checkoffs}
+      />
+
+      <ActivityModal
+        activity={modalActivity}
+        mealSelections={mealSelections}
+        onSelectAlt={handleSelectAlt}
+        onClose={() => setModalActivity(null)}
       />
     </div>
   )
