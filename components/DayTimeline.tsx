@@ -901,6 +901,43 @@ export default function DayTimeline({
 
       {tab === 'timeline' && (
       <>
+      {day.summary && (
+        <div
+          style={{
+            background: '#fff8f7',
+            border: '0.5px solid #fde8e8',
+            borderLeft: '3px solid #C0392B',
+            borderRadius: 8,
+            padding: '12px 14px',
+            marginBottom: 16,
+          }}
+        >
+          <p
+            style={{
+              fontSize: 9,
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              color: '#C0392B',
+              fontWeight: 500,
+              marginBottom: 4,
+              margin: 0,
+            }}
+          >
+            Day Overview
+          </p>
+          <p
+            style={{
+              fontSize: 12,
+              color: '#374151',
+              lineHeight: 1.6,
+              margin: 0,
+              marginTop: 4,
+            }}
+          >
+            {day.summary}
+          </p>
+        </div>
+      )}
       <div className="relative">
         {day.activities.map((act, idx) => {
           const color = typeColor[act.type]
