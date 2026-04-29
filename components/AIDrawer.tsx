@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import type { Activity, Day } from '@/data/itinerary'
+import type { Activity, Day, KyotoOption } from '@/data/itinerary'
 
 type Msg = { role: 'user' | 'assistant'; content: string }
 
@@ -11,6 +11,7 @@ export default function AIDrawer({
   onClose,
   activities,
   ideas,
+  kyotoOptions,
 }: {
   day: Day
   isOpen: boolean
@@ -19,6 +20,7 @@ export default function AIDrawer({
   ideas?: string[]
   mealSelections?: Record<string, string>
   checkoffs?: Record<string, boolean>
+  kyotoOptions?: KyotoOption[]
 }) {
   const greeting: Msg = {
     role: 'assistant',
@@ -80,6 +82,7 @@ export default function AIDrawer({
           messages: sendable,
           currentActivities: activities ?? day.activities,
           currentIdeas: ideas ?? day.ideas ?? [],
+          kyotoOptions: kyotoOptions ?? [],
         }),
       })
       const data = await res.json()

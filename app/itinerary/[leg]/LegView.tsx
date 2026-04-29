@@ -120,7 +120,7 @@ export default function LegView({ leg }: { leg: Leg }) {
               </div>
             </div>
 
-            {activeDay && <DayTimeline day={activeDay} editMode={editMode} accommodations={leg.accommodations} />}
+            {activeDay && <DayTimeline day={activeDay} editMode={editMode} accommodations={leg.accommodations} kyotoOptions={leg.kyotoOptions ?? []} />}
           </>
         )}
 

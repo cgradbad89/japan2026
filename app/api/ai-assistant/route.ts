@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { NextRequest, NextResponse } from 'next/server'
-import { getLeg, type Activity, type Day } from '@/data/itinerary'
+import { getLeg, type Activity, type Day, type KyotoOption } from '@/data/itinerary'
 
 export const runtime = 'nodejs'
 
@@ -19,7 +19,8 @@ function findDay(dayId: string): Day | null {
 function buildSystemPrompt(
   day: Day,
   activities: Activity[],
-  ideas: string[]
+  ideas: string[],
+  kyotoOptions?: KyotoOption[]
 ): string {
   const activityLines = activities
     .map((a) => {
@@ -38,6 +39,11 @@ function buildSystemPrompt(
     ? `\nOptional ideas for this day: ${ideas.join(', ')}`
     : ''
 
+  const kyotoLine =
+    kyotoOptions && kyotoOptions.length > 0
+      ? `\nThis is an open planning day. Available options the family can choose from:\n${kyotoOptions.map((o) => `- ${o.title}${o.type === 'daytrip' ? ' (day trip)' : ''}${o.description ? ': ' + o.description : ''}`).join('\n')}`
+      : ''
+
   const legDescription =
     day.leg === 'golden-week' ? 'Golden Week (5 Adults)' : 'Hokkaido (John & Sabrina)'
 
@@ -47,7 +53,7 @@ Day: ${day.dayLabel} — ${day.title}
 Leg: ${legDescription}
 
 Today's activities:
-${activityLines}${ideasLine}
+${activityLines}${ideasLine}${kyotoLine}
 
 You can help with: explaining sights and their cultural significance, restaurant recommendations and food descriptions, logistics and travel tips, cultural etiquette, what to expect at each location, nearby alternatives, and any other questions about this day's plans.
 
@@ -64,6 +70,9 @@ export async function POST(req: NextRequest) {
       : undefined
     const currentIdeas: string[] | undefined = Array.isArray(body?.currentIdeas)
       ? body.currentIdeas
+      : undefined
+    const currentKyotoOptions: KyotoOption[] | undefined = Array.isArray(body?.kyotoOptions)
+      ? body.kyotoOptions
       : undefined
 
     if (!dayId) {
@@ -98,7 +107,7 @@ export async function POST(req: NextRequest) {
     const response = await client.messages.create({
       model: 'claude-opus-4-5',
       max_tokens: 1024,
-      system: buildSystemPrompt(day, effectiveActivities, effectiveIdeas),
+      system: buildSystemPrompt(day, effectiveActivities, effectiveIdeas, currentKyotoOptions),
       messages: conversation,
     })
 

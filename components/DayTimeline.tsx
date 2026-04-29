@@ -7,6 +7,7 @@ import type {
   Activity,
   ActivityType,
   Day,
+  KyotoOption,
   MealAlternative,
 } from '@/data/itinerary'
 import {
@@ -23,6 +24,7 @@ import { googleMapsUrl } from '@/lib/maps'
 const DayMap = dynamic(() => import('@/components/DayMap'), { ssr: false })
 const AIDrawer = dynamic(() => import('@/components/AIDrawer'), { ssr: false })
 const ActivityModal = dynamic(() => import('@/components/ActivityModal'), { ssr: false })
+const OpenDayView = dynamic(() => import('@/components/OpenDayView'), { ssr: false })
 
 const typeColor: Record<ActivityType, string> = {
   sightseeing: '#C0392B',
@@ -731,10 +733,12 @@ export default function DayTimeline({
   day,
   editMode,
   accommodations,
+  kyotoOptions,
 }: {
   day: Day
   editMode: boolean
   accommodations: Accommodation[]
+  kyotoOptions?: KyotoOption[]
 }) {
   const [checkoffs, setCheckoffs] = useState<Record<string, boolean>>({})
   const [mealSelections, setMealSelections] = useState<Record<string, string>>({})
@@ -899,7 +903,11 @@ export default function DayTimeline({
         />
       )}
 
-      {tab === 'timeline' && (
+      {tab === 'timeline' && day.isOpenDay && (
+        <OpenDayView day={day} kyotoOptions={kyotoOptions ?? []} />
+      )}
+
+      {tab === 'timeline' && !day.isOpenDay && (
       <>
       {day.summary && (
         <div
@@ -1010,6 +1018,7 @@ export default function DayTimeline({
       />
       </>
       )}
+      {/* end non-open day */}
 
       <AIDrawer
         day={day}
@@ -1019,6 +1028,7 @@ export default function DayTimeline({
         ideas={day.ideas ?? []}
         mealSelections={mealSelections}
         checkoffs={checkoffs}
+        kyotoOptions={day.isOpenDay ? (kyotoOptions ?? []) : undefined}
       />
 
       <ActivityModal

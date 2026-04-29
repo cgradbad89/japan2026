@@ -1,4 +1,6 @@
 import {
+  arrayRemove,
+  arrayUnion,
   collection,
   doc,
   getDocs,
@@ -168,6 +170,39 @@ export async function addAlternative(
     return { ...a, alternatives: [...existing, alt] }
   })
   await saveDayActivities(dayId, updated)
+}
+
+// ---------- Kyoto open-day selections ----------
+
+export function subscribeToKyotoSelections(
+  dayId: string,
+  callback: (selectedIds: string[]) => void
+): () => void {
+  const ref = doc(db, 'kyotoSelections', dayId)
+  return onSnapshot(ref, (snap) => {
+    if (snap.exists()) {
+      callback((snap.data().selectedOptions as string[]) ?? [])
+    } else {
+      callback([])
+    }
+  })
+}
+
+export async function toggleKyotoOption(
+  dayId: string,
+  optionId: string,
+  isCurrentlySelected: boolean
+): Promise<void> {
+  const ref = doc(db, 'kyotoSelections', dayId)
+  await setDoc(
+    ref,
+    {
+      selectedOptions: isCurrentlySelected
+        ? arrayRemove(optionId)
+        : arrayUnion(optionId),
+    },
+    { merge: true }
+  )
 }
 
 // ---------- Pre-trip checklist ----------

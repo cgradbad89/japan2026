@@ -43,6 +43,20 @@ export interface Accommodation {
   isTBD?: boolean
 }
 
+export interface KyotoOption {
+  id: string
+  title: string
+  icon: string
+  type: 'kyoto' | 'daytrip'
+  duration?: string
+  description?: string
+  highlight?: string
+  address?: string
+  lat?: number
+  lng?: number
+  note?: string
+}
+
 export interface Day {
   id: string
   dayNumber: number
@@ -54,6 +68,7 @@ export interface Day {
   activities: Activity[]
   ideas?: string[]
   summary?: string
+  isOpenDay?: boolean
 }
 
 export interface Leg {
@@ -64,6 +79,7 @@ export interface Leg {
   travelers: string
   days: Day[]
   accommodations: Accommodation[]
+  kyotoOptions?: KyotoOption[]
 }
 
 const goldenWeekDays: Day[] = [
@@ -348,105 +364,15 @@ const goldenWeekDays: Day[] = [
     dayNumber: 4,
     date: '2026-05-04',
     dayLabel: 'Monday, May 4',
-    title: 'Hiroshima & Miyajima Day Trip',
+    title: 'Kyoto — Your Day to Explore',
     leg: 'golden-week',
     travelers: '5 Adults',
+    isOpenDay: true,
     summary:
-      'A powerful and unforgettable day — the Peace Memorial Park in Hiroshima offers profound reflection, then a ferry to Miyajima Island reveals the iconic floating torii gate of Itsukushima Shrine. Back in Kyoto by evening for a relaxed izakaya dinner.',
+      'A completely open day in Kyoto — pick from the options pool based on energy, weather, and group mood. One confirmed dinner tonight at Sumiro Man.',
     activities: [
       {
         id: 'd4-a1',
-        time: '9:33 AM',
-        type: 'transport',
-        title: 'Shinkansen Kyoto → Hiroshima Station',
-        description:
-          'Departs Kyoto Station. Arrives Hiroshima 11:11 AM (~1.5 hrs, Nozomi/Sakura service). Reserve seats in advance — Golden Week trains fill quickly.',
-        lat: 34.3963,
-        lng: 132.4595,
-      },
-      {
-        id: 'd4-a2',
-        time: '11:20 AM',
-        type: 'transport',
-        title: 'Hiroshima Station → Peace Memorial Park',
-        description:
-          'Two options: Bus 103 from Platform 5 (5 stops to Shirakamisha-mae, ~15 mins, ¥220). Or Taxi (~8 mins, ¥1,000). The museum is visible from the Aioi Bridge.',
-        lat: 34.3955,
-        lng: 132.4533,
-      },
-      {
-        id: 'd4-a3',
-        time: '12:00 PM',
-        type: 'sightseeing',
-        title: 'Peace Memorial Park & Museum',
-        address: 'Nakajimacho, Naka Ward, Hiroshima, 730-0811',
-        lat: 34.3955,
-        lng: 132.4533,
-        description:
-          'The park and museum commemorate the atomic bombing of August 6, 1945. The A-Bomb Dome (Genbaku Dome) is the skeletal ruin of the former Hiroshima Prefectural Industrial Promotion Hall — preserved as a UNESCO World Heritage Site. The museum inside is deeply moving with personal artifacts and survivor accounts. Budget 1.5-2 hours.',
-        highlight:
-          "The A-Bomb Dome and the Children's Peace Monument. The museum is essential — don't skip the main building even if time is short.",
-        note: 'Museum entry: ¥200 adults. Audio guides available in English.',
-      },
-      {
-        id: 'd4-a4',
-        time: '1:45 PM',
-        type: 'meal',
-        title: 'Yabuki Ramen · Hiroshima',
-        address: '〒730-0032 Hiroshima, Naka Ward, Tatemachi, 6-13 立町ビル 103',
-        lat: 34.3963,
-        lng: 132.4601,
-        description:
-          'Local ramen shop in central Hiroshima known for Hiroshima-style ramen — soy-based broth with flat noodles, different from Tokyo or Sapporo styles.',
-        alternatives: [
-          {
-            id: 'd4-a4-alt1',
-            name: 'Nigiriya Kenta · Seafood',
-            address: '〒730-0035 Hiroshima, Naka Ward, Hondori, 4-11 ル・フェール広島本通りビル 2階',
-            note: 'Fresh seafood restaurant on the Hondori covered arcade. Hiroshima oysters and local seafood.',
-            lat: 34.3967,
-            lng: 132.4591,
-          },
-          {
-            id: 'd4-a4-alt2',
-            name: 'Teki Kushiyaki · Yakitori',
-            address: '1 Chome-5-5 Kamiyacho, Naka Ward, Hiroshima, 730-0031',
-            note: 'Grilled yakitori skewers near the Peace Park. Quick and satisfying.',
-            lat: 34.3956,
-            lng: 132.4555,
-          },
-        ],
-      },
-      {
-        id: 'd4-a5',
-        time: '2:45 PM',
-        type: 'transport',
-        title: 'Return to Hiroshima Station',
-        description:
-          'Reverse the morning route — Bus or taxi back to Hiroshima Station. Allow 20 mins.',
-        lat: 34.3963,
-        lng: 132.4595,
-      },
-      {
-        id: 'd4-a6',
-        time: '3:29 PM',
-        type: 'transport',
-        title: 'Shinkansen Hiroshima → Kyoto (Train 166, Car 110, Seats 7A-D)',
-        description: 'Confirmed seats: Train 166, Car 110, Seats 7A-D. Arrives Kyoto 5:12 PM.',
-        lat: 34.9858,
-        lng: 135.7587,
-      },
-      {
-        id: 'd4-a7',
-        time: '5:30 PM',
-        type: 'free',
-        title: 'Rest at Airbnb',
-        description: 'Decompress after an intense and emotional day. Freshen up before dinner.',
-        lat: 34.9977,
-        lng: 135.759,
-      },
-      {
-        id: 'd4-a8',
         time: '8:00 PM',
         type: 'meal',
         title: 'Sumiro Man · Izakaya',
@@ -454,7 +380,8 @@ const goldenWeekDays: Day[] = [
         lat: 35.0082,
         lng: 135.7608,
         description:
-          'A local izakaya in central Kyoto. Grilled skewers, seasonal small plates, and cold Sapporo draft. Comfortable and unpretentious — a good neighborhood spot for a relaxed evening after a heavy day.',
+          'A local izakaya in central Kyoto. Grilled skewers, seasonal small plates, and cold Sapporo draft. Comfortable and unpretentious — good neighborhood spot.',
+        highlight: 'Reservation confirmed',
       },
     ],
   },
@@ -463,93 +390,15 @@ const goldenWeekDays: Day[] = [
     dayNumber: 5,
     date: '2026-05-05',
     dayLabel: 'Tuesday, May 5',
-    title: 'Castles, Slopes & Wagyu Feast',
+    title: 'Kyoto — Your Day to Explore',
     leg: 'golden-week',
     travelers: '5 Adults',
+    isOpenDay: true,
     summary:
-      "Start with a Shogun's castle and its chirping 'nightingale floors,' then wind through the preserved Higashiyama slopes past Sannenzaka and Kiyomizudera's dramatic wooden stage. The evening brings Kyoto's geisha district and the trip's biggest beef splurge.",
+      "Another open day in Kyoto — choose from the options pool. Gion district exploration in the late afternoon and the trip's biggest beef splurge dinner at Mouriya Gion.",
     activities: [
       {
         id: 'd5-a1',
-        time: '9:00 AM',
-        type: 'sightseeing',
-        title: 'Nijo Castle',
-        address: '541 Nijo-jo-cho, Nakagyo Ward, Kyoto 604-8301',
-        lat: 35.0142,
-        lng: 135.748,
-        description:
-          "A UNESCO World Heritage flatland castle built in 1603 as the Kyoto residence of Tokugawa Ieyasu, the first Edo shogun. Famous for its 'uguisubari' (nightingale floors) — polished wooden corridors designed to squeak underfoot to alert guards of intruders. The castle grounds include elaborate Ninomaru Palace with stunning Kano school artwork and a beautiful Japanese garden.",
-        highlight:
-          'Listen for the nightingale floors — the squeak gets louder in the driest rooms. The Ninomaru Palace gardens are excellent in late spring.',
-        note: 'Bus 50 from Kyoto Station (15 mins, every 12 mins, ¥230). Or taxi 7 mins (~¥1,000).',
-        alternatives: [
-          {
-            id: 'd5-a1-alt1',
-            name: 'Fushimi Inari Taisha',
-            address: '68 Fukakusa Yabunouchicho, Fushimi Ward, Kyoto',
-            note: 'Walk through thousands of iconic vermilion torii gates. Allow 2-4 hours. Arrive before 9am to beat Golden Week crowds.',
-            lat: 34.9671,
-            lng: 135.7727,
-          },
-        ],
-      },
-      {
-        id: 'd5-a2',
-        time: '11:00 AM',
-        type: 'meal',
-        title: 'Menbaka Fire Ramen',
-        address: 'Kamigyo Ward, Kyoto (near Nijo Castle)',
-        lat: 35.0082,
-        lng: 135.7594,
-        description:
-          "Kyoto's most theatrical ramen experience — the chef dramatically flambes green onions right over your bowl with a giant ladle of hot oil. The flavored broth is excellent beyond the spectacle. Very popular — expect a short queue.",
-        highlight:
-          'The fire show at your table is unmissable. Go for the standard bowl and watch the staff work the flames.',
-        alternatives: [
-          {
-            id: 'd5-a2-alt1',
-            name: 'Local Soba nearby',
-            note: 'For a quieter, more casual lunch — any soba shop near Nijo Castle works well',
-          },
-        ],
-      },
-      {
-        id: 'd5-a3',
-        time: 'Afternoon',
-        type: 'free',
-        title: 'Return to rental — rest',
-        description:
-          'Head back to the Airbnb for a couple of hours before the afternoon sightseeing push.',
-      },
-      {
-        id: 'd5-a4',
-        time: '2:00 PM',
-        type: 'sightseeing',
-        title: 'Sannenzaka · Ninenzaka — Preserved Historic Streets',
-        address: '2 Chome-211 Kiyomizu, Higashiyama Ward, Kyoto, 605-0862',
-        lat: 34.9978,
-        lng: 135.7833,
-        description:
-          "A network of beautifully preserved stone-paved lanes from the Edo period leading up to Kiyomizudera. Lined with traditional wooden machiya townhouses converted into tea shops, pottery studios, sake sellers, and craft stores. Sannenzaka ('three year slope') and Ninenzaka ('two year slope') are the main streets — legend says tripping on these stones brings 2-3 years of bad luck.",
-        highlight:
-          "Browse the pottery and lacquerware shops — this is one of Kyoto's best souvenir streets. Try the matcha soft serve.",
-      },
-      {
-        id: 'd5-a5',
-        time: '3:30 PM',
-        type: 'sightseeing',
-        title: 'Kiyomizu-dera Temple',
-        address: '1 Chome-294 Kiyomizu, Higashiyama Ward, Kyoto, 605-0862',
-        lat: 34.9948,
-        lng: 135.785,
-        description:
-          "One of Japan's most celebrated temples, founded in 778 AD and rebuilt in 1633 without a single nail. The massive wooden stage (butai) juts out 13 meters over a cliff with panoramic views of Kyoto. The name means 'pure water' — spring water flows from three separate streams below the main hall, each granting a different wish. UNESCO World Heritage Site.",
-        highlight:
-          "'Jumping off the stage at Kiyomizudera' is a Japanese idiom for taking a bold leap — the stage is 13m high. Arrive for golden hour light on the city.",
-        note: 'Entry: ¥500 adults. The approach up from Sannenzaka takes about 15 minutes.',
-      },
-      {
-        id: 'd5-a6',
         time: '4:30 PM',
         type: 'entertainment',
         title: 'Gion District Exploration',
@@ -557,38 +406,29 @@ const goldenWeekDays: Day[] = [
         lat: 35.0036,
         lng: 135.7757,
         description:
-          "Kyoto's famous geisha (geiko) and maiko district, centered around Hanamikoji Street. Traditional ochaya (teahouses) line the preserved machiya streetscape. If lucky, spot a geiko hurrying to an evening appointment after 5pm.",
-        highlight:
-          'Nishi-Hanamikoji Street at dusk is one of the most atmospheric walks in Japan. Stay quiet and respectful — residents still live and work here.',
+          "Kyoto's famous geisha district — wander Hanamikoji Street and the preserved machiya townhouses at dusk. Best chance to spot a geiko or maiko hurrying to an evening appointment.",
+        highlight: 'Nishi-Hanamikoji Street at dusk is one of the most atmospheric walks in Japan',
         alternatives: [
           {
-            id: 'd5-a6-alt1',
-            name: 'Matsui Sake Brewery',
-            address: '〒606-8305 Kyoto, Sakyo Ward, Yoshidakawaracho, 1-6',
-            note: 'Working sake brewery with tastings and tours. Excellent if done before — also good to revisit with new appreciation after the canal tour.',
-            lat: 35.0267,
-            lng: 135.782,
-          },
-          {
-            id: 'd5-a6-alt2',
+            id: 'd5-a1-alt1',
             name: 'Yasaka Shrine',
             address: '625 Gionmachi Kitagawa, Higashiyama Ward, Kyoto 605-0073',
-            note: 'Free entry — the main shrine of Gion with a famous stone lantern gate. Particularly beautiful at night when lanterns are lit.',
+            note: 'Free entry — the main shrine of Gion with stone lantern gate. Beautiful at night.',
             lat: 35.0036,
             lng: 135.7785,
           },
           {
-            id: 'd5-a6-alt3',
+            id: 'd5-a1-alt2',
             name: 'Nishi-Hanamikoji Street',
             address: '570-123 Gionmachi Minamigawa, Higashiyama Ward, Kyoto 605-0074',
-            note: 'The most photogenic street in Gion — traditional ochaya facades, stone lanterns, wooden lattice windows.',
+            note: 'Most photogenic street in Gion — traditional ochaya facades, stone lanterns.',
             lat: 35.0025,
             lng: 135.7757,
           },
         ],
       },
       {
-        id: 'd5-a7',
+        id: 'd5-a2',
         time: '6:00 PM',
         type: 'meal',
         title: 'Kobe Beef Steak Mouriya Gion',
@@ -596,14 +436,10 @@ const goldenWeekDays: Day[] = [
         lat: 35.0033,
         lng: 135.7745,
         description:
-          "One of Kyoto's most prestigious Kobe beef restaurants, operating since 1895. Cook-your-own style BBQ — premium A5 Kobe beef brought to the table raw and grilled on an iron plate at your seat. The marbling level is extraordinary — fat melts at body temperature.",
-        highlight:
-          "Order the course menu for the full Kobe beef experience. The ribeye cut is exceptional. This is the trip's most special dinner.",
-        note: 'Reservation essential — book at least 2 weeks in advance. Smart casual dress.',
+          "One of Kyoto's most prestigious Kobe beef restaurants, operating since 1895. Cook-your-own style A5 Kobe beef on an iron plate at your seat.",
+        highlight: "Cook-your-own Kobe beef BBQ — the trip's most special dinner",
+        note: 'Reservation confirmed — smart casual dress',
       },
-    ],
-    ideas: [
-      'Alt morning: Fushimi Inari Taisha — walk through thousands of iconic vermilion torii gates (68 Fukakusa Yabunouchicho, Fushimi Ward, Kyoto). Allow 2-4 hours for the full hike to the summit. Arrive before 9am during Golden Week to avoid crowds.',
     ],
   },
   {
@@ -611,111 +447,23 @@ const goldenWeekDays: Day[] = [
     dayNumber: 6,
     date: '2026-05-06',
     dayLabel: 'Wednesday, May 6',
-    title: 'Bamboo & Osaka Night',
+    title: 'Kyoto — Your Day to Explore',
     leg: 'golden-week',
     travelers: '5 Adults',
+    isOpenDay: true,
     summary:
-      "An early morning in Arashiyama's bamboo forest before the crowds arrive, then an afternoon in Osaka taking in the castle grounds and Dotonbori's neon-soaked food streets. Back to Kyoto by night.",
+      "The last fully open day in Kyoto — pick what the group hasn't done yet. No confirmed dinner tonight — flexible evening.",
     activities: [
       {
         id: 'd6-a1',
-        time: '8:30 AM',
-        type: 'sightseeing',
-        title: 'Arashiyama Bamboo Forest',
-        address: 'Sagaogurayama Tabuchiyamacho, Ukyo Ward, Kyoto, 616-8394',
-        lat: 35.0173,
-        lng: 135.6721,
-        description:
-          'A towering grove of Moso bamboo on the western edge of Kyoto. The stalks rise 20+ meters creating a cathedral-like canopy that sways and rustles in the wind. The main path through the grove is short (~500m) but the surrounding temple trails extend the experience significantly.',
-        highlight:
-          'Arrive before 9am — the bamboo grove gets very crowded by mid-morning during Golden Week. Early morning light through the bamboo is magical.',
-        note:
-          'JR Sagano Line from Kyoto Station to Saga-Arashiyama (15 mins, ¥240). Then 10 min walk. Or taxi 30 mins (~¥3,500).',
-        alternatives: [
-          {
-            id: 'd6-a1-alt1',
-            name: 'Fushimi Inari Taisha',
-            address: '68 Fukakusa Yabunouchicho, Fushimi Ward, Kyoto',
-            note: 'Walk through thousands of torii gates. Allow 2-4 hours. Arrive before 8am during Golden Week.',
-            lat: 34.9671,
-            lng: 135.7727,
-          },
-        ],
-      },
-      {
-        id: 'd6-a2',
-        time: '1:22 PM',
-        type: 'transport',
-        title: 'Train → Osaka Shin-Osaka Station',
-        description:
-          'Shinkansen or rapid train from Kyoto Station to Shin-Osaka (14 mins by Shinkansen, ~¥1,490). Or JR Special Rapid (30 mins, ¥570). Arrives Shin-Osaka 1:40 PM.',
-        lat: 34.7334,
-        lng: 135.5003,
-      },
-      {
-        id: 'd6-a3',
-        time: '2:30 PM',
-        type: 'sightseeing',
-        title: 'Osaka Castle',
-        address: '1-1 Osakajo, Chuo Ward, Osaka 540-0002',
-        lat: 34.6873,
-        lng: 135.5259,
-        description:
-          "One of Japan's most iconic castles, originally built by Toyotomi Hideyoshi in 1583. The current main tower (rebuilt 1931) is an 8-story museum with excellent historical exhibits on the castle's role in the unification of Japan. The surrounding 106-hectare park has dramatic stone walls, moats, and gates.",
-        highlight:
-          'The views from the top floor of the castle tower over Osaka are excellent. The stone walls and moats are more impressive than any photo suggests.',
-        note:
-          'Castle tower entry: ¥600. 20-min walk from Shin-Osaka Station or take subway to Tanimachi 4-chome Station.',
-      },
-      {
-        id: 'd6-a4',
-        time: '4:30 PM',
-        type: 'sightseeing',
-        title: 'Dotonbori',
-        address: 'Dotonbori, Chuo Ward, Osaka 542-0071',
-        lat: 34.6687,
-        lng: 135.5014,
-        description:
-          "Osaka's most famous entertainment and dining district, centered on the Dotonbori canal. Packed with giant mechanical restaurant signs — the rotating crab of Kani Doraku, the Glico Running Man billboard, the Kuidaore Taro drum-playing clown. The area is a food lover's paradise: takoyaki (octopus balls), okonomiyaki, kushikatsu, ramen, and more at every turn.",
-        highlight:
-          'The Glico Running Man sign is the photo everyone takes. For the best shot, stand on the Ebisubashi Bridge looking west at dusk.',
-      },
-      {
-        id: 'd6-a5',
-        time: '6:00 PM',
+        time: 'Evening',
         type: 'meal',
-        title: 'Street Food Dinner · Dotonbori',
-        address: 'Dotonbori, Chuo Ward, Osaka 542-0071',
-        lat: 34.6687,
-        lng: 135.5014,
-        description:
-          "Graze through Dotonbori's street food stalls — takoyaki from Kukuru or Aizuya, okonomiyaki from any griddle shop, fresh kushikatsu at a standing bar. Osaka is Japan's food capital (kuidaore = 'eat until you drop') — this is the city's best introduction.",
-        highlight:
-          "Takoyaki and Osaka-style okonomiyaki are mandatory. Try both — they're entirely different dishes.",
-        alternatives: [
-          {
-            id: 'd6-a5-alt1',
-            name: 'Kani Doraku Dotonbori Main Branch',
-            address: '1 Chome-6-18 Dotonbori, Chuo Ward, Osaka, 542-0071',
-            note: 'The iconic crab restaurant under the giant mechanical crab sign. Fresh Hokkaido crab in a sit-down setting. Book ahead or expect a queue.',
-            lat: 34.6688,
-            lng: 135.5013,
-          },
-        ],
+        title: 'Dinner — TBD',
+        isTBD: true,
+        lat: 34.9977,
+        lng: 135.759,
+        description: 'No reservation tonight — explore on your own or pick from options near the Airbnb.',
       },
-      {
-        id: 'd6-a6',
-        time: '8:33 PM',
-        type: 'transport',
-        title: 'Train → Kyoto Station',
-        description:
-          'JR Rapid or Shinkansen from Shin-Osaka or Osaka Station. Arrives Kyoto 8:50 PM (~30 mins, ¥570-1,490 depending on service).',
-        lat: 34.9858,
-        lng: 135.7587,
-      },
-    ],
-    ideas: [
-      'Alt morning: Fushimi Inari Taisha — walk through thousands of iconic vermilion torii gates (68 Fukakusa Yabunouchicho, Fushimi Ward, Kyoto). Allow 2-4 hours. Arriving before 8am during Golden Week is essential.',
     ],
   },
   {
@@ -1622,6 +1370,139 @@ const hokkaidoAccommodations: Accommodation[] = [
   },
 ]
 
+const goldenWeekKyotoOptions: KyotoOption[] = [
+  {
+    id: 'ko-fushimi-inari',
+    title: 'Fushimi Inari Taisha',
+    icon: '🏯',
+    type: 'kyoto',
+    duration: '2-4 hrs',
+    address: '68 Fukakusa Yabunouchicho, Fushimi Ward, Kyoto',
+    lat: 34.9671,
+    lng: 135.7727,
+    description: 'Walk through thousands of iconic vermilion torii gates winding up Mt. Inari. The lower gates are packed during Golden Week — the upper trails thin out quickly and reward with forest silence and city views.',
+    highlight: 'Arrive before 9am during Golden Week. The full summit hike takes 2-4 hours — even 45 mins to the first plateau is worth it.',
+    note: 'Free entry. JR Inari Station (JR Nara Line, 5 min from Kyoto Station).',
+  },
+  {
+    id: 'ko-arashiyama',
+    title: 'Arashiyama Bamboo Forest',
+    icon: '🎋',
+    type: 'kyoto',
+    duration: 'Half day',
+    address: 'Sagaogurayama Tabuchiyamacho, Ukyo Ward, Kyoto, 616-8394',
+    lat: 35.0173,
+    lng: 135.6721,
+    description: 'Towering Moso bamboo groves on the western edge of Kyoto. The main grove path is short but the surrounding Tenryu-ji temple gardens and Togetsukyo bridge extend the visit. Combine with a boat ride on the Oi River.',
+    highlight: 'Arrive before 9am — the grove gets very crowded by mid-morning during Golden Week.',
+    note: 'JR Sagano Line to Saga-Arashiyama (15 mins, ¥240) then 10 min walk. Or taxi 30 mins (~¥3,500).',
+  },
+  {
+    id: 'ko-nijo',
+    title: 'Nijo Castle',
+    icon: '🏰',
+    type: 'kyoto',
+    duration: '2 hrs',
+    address: '541 Nijo-jo-cho, Nakagyo Ward, Kyoto 604-8301',
+    lat: 35.0142,
+    lng: 135.748,
+    description: 'UNESCO World Heritage flatland castle built in 1603 as the Kyoto residence of Tokugawa Ieyasu. Famous for its uguisubari nightingale floors — polished corridors designed to squeak as a security alarm. The Ninomaru Palace interior has stunning Kano school painted screens.',
+    highlight: 'Listen for the nightingale floors. The palace garden is one of the finest in Kyoto.',
+    note: 'Entry: ¥1,300. Bus 50 from Kyoto Station (15 mins, ¥230). Or taxi 7 mins (~¥1,000).',
+  },
+  {
+    id: 'ko-sannenzaka',
+    title: 'Sannenzaka + Kiyomizudera',
+    icon: '⛩️',
+    type: 'kyoto',
+    duration: 'Half day',
+    address: '1 Chome-294 Kiyomizu, Higashiyama Ward, Kyoto, 605-0862',
+    lat: 34.9948,
+    lng: 135.785,
+    description: 'Walk the preserved Edo-period stone lanes of Sannenzaka and Ninenzaka — lined with pottery shops, tea houses, and snack stalls — then climb to Kiyomizudera temple and its 13-meter wooden stage overlooking the city. UNESCO World Heritage Site.',
+    highlight: 'The wooden stage at Kiyomizudera is extraordinary — panoramic views over Kyoto. Try matcha soft serve on the way up.',
+    note: 'Entry: ¥500. Steep walk from Gojo or Kiyomizumichi bus stop. Allow 2-3 hours for both.',
+  },
+  {
+    id: 'ko-nishiki',
+    title: 'Nishiki Market',
+    icon: '🍢',
+    type: 'kyoto',
+    duration: '1-2 hrs',
+    address: 'Nishiki-koji, Nakagyo Ward, Kyoto',
+    lat: 35.0052,
+    lng: 135.7651,
+    description: "Kyoto's Kitchen — a 400-year-old covered market street stretching 5 blocks with 100+ shops. Sample grilled skewers, soy milk donuts, Kyoto pickles (tsukemono), fresh tofu, matcha everything, and dashi from the source. Best for edible souvenirs and kitchen knives.",
+    highlight: 'Go hungry. The skewer shops and pickle stalls are the highlights — try the yuba (tofu skin) on a stick.',
+    note: 'Free. 2 min walk from Karasuma-Oike or Shijo Station. Most shops open 9am-6pm.',
+  },
+  {
+    id: 'ko-toji',
+    title: 'To-ji Temple',
+    icon: '🗼',
+    type: 'kyoto',
+    duration: '1 hr',
+    address: '1 Kujocho, Minami Ward, Kyoto, 601-8473',
+    lat: 34.98,
+    lng: 135.7474,
+    description: "Japan's tallest wooden pagoda (57 meters, 5 stories) built in 796 AD — a UNESCO World Heritage Site and Kyoto's most iconic skyline feature. The temple grounds contain important Buddhist sculptures and a large ornamental pond.",
+    highlight: 'The 5-story pagoda is stunning from the outside. The treasure house (separate ticket) has important Buddhist art.',
+    note: 'Entry: ¥500. 15 min walk southwest from Kyoto Station. Easy to combine with a Shinkansen departure day.',
+  },
+  {
+    id: 'ko-hiroshima',
+    title: 'Hiroshima Half Day',
+    icon: '🕊️',
+    type: 'daytrip',
+    duration: 'Full day out',
+    address: 'Peace Memorial Park, Nakajimacho, Naka Ward, Hiroshima',
+    lat: 34.3955,
+    lng: 132.4533,
+    description: 'A profound and essential day trip — the Peace Memorial Park and Museum commemorate the atomic bombing of August 6, 1945. The A-Bomb Dome (UNESCO World Heritage) stands preserved as a testament to the destruction. The museum is deeply moving with personal artifacts and survivor accounts.',
+    highlight: "The museum is essential — budget 1.5-2 hours inside. The A-Bomb Dome and the Children's Peace Monument are unforgettable.",
+    note: 'Shinkansen from Kyoto (departs 9:33am, arrives 11:11am). Museum entry ¥200. Return by 3pm Shinkansen.',
+  },
+  {
+    id: 'ko-osaka',
+    title: 'Osaka Half Day',
+    icon: '🏙️',
+    type: 'daytrip',
+    duration: 'Afternoon + evening',
+    address: 'Dotonbori, Chuo Ward, Osaka 542-0071',
+    lat: 34.6687,
+    lng: 135.5014,
+    description: "Osaka is Japan's food capital — a completely different energy from Kyoto. Osaka Castle in the afternoon, then Dotonbori's neon chaos in the evening: the Glico Man sign, giant mechanical crabs, takoyaki stands, okonomiyaki griddles, and kushikatsu bars. Back to Kyoto by 9pm.",
+    highlight: "Takoyaki and Osaka-style okonomiyaki are mandatory — eat everything. Dotonbori at night is one of Japan's great sensory experiences.",
+    note: 'Train from Kyoto Station to Shin-Osaka (14 mins by Shinkansen or 30 mins JR Rapid). Last train back ~8:33pm.',
+  },
+  {
+    id: 'ko-kurama',
+    title: 'Kurama & Kibune Onsen',
+    icon: '♨️',
+    type: 'daytrip',
+    duration: '~5.5 hrs (back by 3pm)',
+    address: 'Kurama Onsen, Kurama Honmachi, Sakyo Ward, Kyoto',
+    lat: 35.1133,
+    lng: 135.7708,
+    description: 'A mountain village half-day: forest shrine, outdoor onsen soak, and riverside lunch in Kibune. Take the Eizan Railway into forested hills to Kurama, soak at Kurama Onsen (¥2,500-2,700 for full indoor+outdoor plan, towels and loungewear included), then bus to Kibune for riverside lunch at Beniya or Yoshuji.',
+    highlight: "The outdoor rotenburo on the hillside surrounded by spring forest is beautiful. Kibune's riverside restaurants are one of Kyoto's most magical settings.",
+    note: 'Depart 8:15am. Keihan Line from Sanjo Station to Demachiyanagi, then Eizan Railway to Kurama (30 mins, ¥470). Back to Airbnb by 3pm.',
+  },
+  {
+    id: 'ko-yunohana',
+    title: 'Yunohana Onsen — Sagano Romantic Train',
+    icon: '🚂',
+    type: 'daytrip',
+    duration: '~6 hrs (back by 3pm)',
+    address: 'Yunohana Onsen, Kameoka, Kyoto',
+    lat: 35.0194,
+    lng: 135.5583,
+    description: 'A gorge-scenery onsen day via the famous Sagano Romantic Train — a 25-minute slow ride along the Hozugawa River gorge at peak spring green. Day-use bathing at Yunohana Sanso ryokan (¥1,500-2,000), then return by Hozugawa River Cruise — boatmen pole you 16km downstream through scenic rapids back to Arashiyama.',
+    highlight: 'The Hozugawa River Cruise is the highlight — 2 hours seated on a traditional boat through mountain gorges. Completely effortless and spectacular.',
+    note: 'Depart 8:30am from Kyoto Station. Sagano Train tickets ¥880 one way — book in advance during Golden Week.',
+  },
+]
+
 export const legs: Record<'golden-week' | 'hokkaido', Leg> = {
   'golden-week': {
     id: 'golden-week',
@@ -1631,6 +1512,7 @@ export const legs: Record<'golden-week' | 'hokkaido', Leg> = {
     travelers: '5 Adults',
     days: goldenWeekDays,
     accommodations: goldenWeekAccommodations,
+    kyotoOptions: goldenWeekKyotoOptions,
   },
   hokkaido: {
     id: 'hokkaido',
